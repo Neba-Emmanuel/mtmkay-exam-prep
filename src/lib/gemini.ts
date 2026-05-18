@@ -13,52 +13,35 @@ export interface GeneratedPractical {
   }>
 }
 
-const GEMINI_URLS = [
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateText',
-  'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateText',
-  'https://generativelanguage.googleapis.com/v1beta/models/text-bison-001:generateText',
-  'https://generativelanguage.googleapis.com/v1/models/text-bison-001:generateText',
-]
+const GEMINI_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
 
-async function callGeminiText(prompt: string): Promise<string> {
+async function callGemini(prompt: string): Promise<string> {
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
-  if (!apiKey) {
-    throw new Error('NEXT_PUBLIC_GEMINI_API_KEY is not configured')
-  }
+  if (!apiKey) throw new Error('NEXT_PUBLIC_GEMINI_API_KEY is not configured')
 
-  for (const url of GEMINI_URLS) {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        prompt: { text: prompt },
+  const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
         temperature: 0.2,
         maxOutputTokens: 1024,
-      }),
-    })
+      },
+    }),
+  })
 
-    const json = await response.json().catch(() => null)
-    if (response.ok) {
-      const output = json?.candidates?.[0]?.output
-      if (typeof output === 'string' && output.trim().length > 0) {
-        return output.trim()
-      }
-      throw new Error('No text output in API response')
-    }
+  const json = await response.json().catch(() => null)
 
-    const message = json?.error?.message ?? `API returned ${response.status}`
-    const isMissingModel = response.status === 404 || /not found/i.test(message)
-    if (isMissingModel) {
-      continue
-    }
-
-    throw new Error(message)
+  if (!response.ok) {
+    throw new Error(json?.error?.message ?? `API returned ${response.status}`)
   }
 
-  throw new Error('No supported Gemini model available in this environment')
+  const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
+  if (typeof text === 'string' && text.trim().length > 0) return text.trim()
+
+  throw new Error('No text in Gemini response')
 }
 
 export async function generatePractical(
@@ -90,26 +73,15 @@ Respond with ONLY valid JSON (no markdown, no backticks, no extra text). Use thi
 
 Make the steps clear and appropriate for secondary school level. Include 4-6 steps total.`
 
+  const text = await callGemini(prompt)
+
+  // Strip markdown fences if model ignores instructions
+  const jsonText = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim()
+
   try {
-    const text = await callGeminiText(prompt)
-
-    let jsonText = text
-    if (jsonText.startsWith('```json')) {
-      jsonText = jsonText.slice(7)
-    }
-    if (jsonText.startsWith('```')) {
-      jsonText = jsonText.slice(3)
-    }
-    if (jsonText.endsWith('```')) {
-      jsonText = jsonText.slice(0, -3)
-    }
-
-    const parsed: GeneratedPractical = JSON.parse(jsonText.trim())
-    return parsed
-  } catch (error) {
-    throw new Error(
-      `AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    )
+    return JSON.parse(jsonText) as GeneratedPractical
+  } catch {
+    throw new Error('AI returned invalid JSON — try again')
   }
 }
 
@@ -125,17 +97,10 @@ Correct Answer: ${correctOptionText}
 
 Provide a brief, clear explanation (2-3 sentences maximum) of why this is the correct answer, suitable for a GCE or BEPC student. Be direct and educational.`
 
-  try {
-    return await callGeminiText(prompt)
-  } catch (error) {
-    throw new Error(
-      `AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    )
-  }
+  return callGemini(prompt)
 }
 
 export function generateLabImage(title: string, subject: string): string {
   const prompt = `${title} ${subject} laboratory experiment setup diagram, clean educational scientific illustration, labeled equipment, white background, no people`
-  const encodedPrompt = encodeURIComponent(prompt)
-  return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=600&nologo=true`
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=800&height=600&nologo=true`
 }
