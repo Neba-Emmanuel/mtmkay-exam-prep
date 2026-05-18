@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 import { AdminShell } from '@/components/shared/AdminShell'
 import api from '@/lib/api'
+import { generateExplanation } from '@/lib/gemini'
 import {
   FileQuestion, Plus, Search, Pencil, Trash2, X, Check,
-  ChevronUp, ChevronDown, ChevronsUpDown, Minus,
+  ChevronUp, ChevronDown, ChevronsUpDown, Minus, Sparkles,
 } from 'lucide-react'
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -111,6 +112,8 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
   error: string
 }) {
   const [form, setForm] = useState<typeof EMPTY_FORM>(initial ?? EMPTY_FORM)
+  const [explainLoading, setExplainLoading] = useState(false)
+  const [explainError, setExplainError] = useState('')
 
   const setField = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }))
 
@@ -128,6 +131,33 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
   const removeOption = (i: number) =>
     setForm((p) => ({ ...p, options: p.options.filter((_, idx) => idx !== i) }))
 
+  const handleAutoExplain = async () => {
+    setExplainError('')
+    if (!form.text.trim()) {
+      setExplainError('Enter a question first')
+      return
+    }
+    const correctOption = form.options.find(o => o.isCorrect)
+    if (!correctOption) {
+      setExplainError('Mark the correct answer first')
+      return
+    }
+    if (!correctOption.text.trim()) {
+      setExplainError('Correct answer text is empty')
+      return
+    }
+
+    setExplainLoading(true)
+    try {
+      const explanation = await generateExplanation(form.text, correctOption.text)
+      setField('explanation', explanation)
+    } catch (e: unknown) {
+      setExplainError((e as Error)?.message ?? 'Failed to generate explanation')
+    } finally {
+      setExplainLoading(false)
+    }
+  }
+
   const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
 
   const hasCorrect = form.options.some((o) => o.isCorrect)
@@ -135,6 +165,7 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
   return (
     <div className="space-y-5">
       {error && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
+      {explainError && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{explainError}</p>}
 
       {/* Question text */}
       <div>
@@ -235,7 +266,22 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
 
       {/* Explanation */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Explanation <span className="text-gray-300 font-normal">(optional)</span></label>
+        <div className="flex items-center gap-2 mb-1">
+          <label className="block text-xs font-medium text-gray-500">Explanation <span className="text-gray-300 font-normal">(optional)</span></label>
+          <button
+            onClick={handleAutoExplain}
+            disabled={explainLoading}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 transition-colors"
+            title="Generate explanation using AI"
+          >
+            {explainLoading ? (
+              <span className="w-3 h-3 border-1.5 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Sparkles className="w-3 h-3" />
+            )}
+            Auto-explain
+          </button>
+        </div>
         <textarea
           className={`${inputCls} resize-none`}
           rows={2}

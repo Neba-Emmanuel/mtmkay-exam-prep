@@ -3,31 +3,41 @@
 import { useEffect, useState } from 'react'
 import { AdminShell } from '@/components/shared/AdminShell'
 import api from '@/lib/api'
+import { generatePractical, generateLabImage } from '@/lib/gemini'
 import {
   Beaker, Plus, Search, Pencil, Trash2, X, Check,
   ChevronUp, ChevronDown, ChevronsUpDown, Minus, GripVertical,
-  Crown, FlaskConical, ListOrdered,
+  Crown, FlaskConical, ListOrdered, Sparkles,
 } from 'lucide-react'
 
 /* ─── Types ─────────────────────────────────────────── */
 interface Subject {
   id: string
   name: string
+  examType?: { name: string }
 }
 
 interface Step {
   id?: string
   order: number
   instruction: string
+  observation?: string | null
+  calculation?: string | null
+  commonMistakes?: string | null
 }
 
 interface Practical {
   id: string
   title: string
   description?: string
+  objective?: string | null
+  apparatus?: string | null
+  safety?: string | null
   subject?: Subject
   subjectId?: string
   isPremium: boolean
+  aiGenerated?: boolean
+  imageUrl?: string | null
   _count?: { steps?: number }
   steps?: Step[]
   [key: string]: unknown
@@ -36,13 +46,18 @@ interface Practical {
 type SortKey = 'title' | 'subject' | 'steps' | 'isPremium'
 type SortDir = 'asc' | 'desc'
 
-const EMPTY_STEP = (): Step => ({ order: 0, instruction: '' })
+const EMPTY_STEP = (): Step => ({ order: 0, instruction: '', observation: null, calculation: null, commonMistakes: null })
 const EMPTY_FORM = {
   title: '',
   description: '',
+  objective: null as string | null,
+  apparatus: null as string | null,
+  safety: null as string | null,
   subjectId: '',
   isPremium: false,
-  steps: [{ order: 1, instruction: '' }] as Step[],
+  aiGenerated: false,
+  imageUrl: null as string | null,
+  steps: [{ order: 1, instruction: '', observation: null, calculation: null, commonMistakes: null }] as Step[],
 }
 
 /* ─── Modal ──────────────────────────────────────────── */
@@ -90,19 +105,23 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
   error: string
 }) {
   const [form, setForm] = useState<typeof EMPTY_FORM>(initial ?? EMPTY_FORM)
+  const [topic, setTopic] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [aiGenerated, setAiGenerated] = useState(false)
 
   const setField = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }))
 
-  const setStep = (i: number, val: string) =>
+  const setStep = (i: number, key: string, val: string) =>
     setForm((p) => ({
       ...p,
-      steps: p.steps.map((s, idx) => idx === i ? { ...s, instruction: val } : s),
+      steps: p.steps.map((s, idx) => idx === i ? { ...s, [key]: val } : s),
     }))
 
   const addStep = () =>
     setForm((p) => ({
       ...p,
-      steps: [...p.steps, { order: p.steps.length + 1, instruction: '' }],
+      steps: [...p.steps, { order: p.steps.length + 1, instruction: '', observation: null, calculation: null, commonMistakes: null }],
     }))
 
   const removeStep = (i: number) =>
@@ -123,11 +142,88 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
     })
   }
 
+  const handleAIGenerate = async () => {
+    setAiError('')
+    if (!form.subjectId) {
+      setAiError('Please select a subject first')
+      return
+    }
+    if (!topic.trim()) {
+      setAiError('Please enter a topic')
+      return
+    }
+    
+    setAiLoading(true)
+    try {
+      const subject = subjects.find(s => s.id === form.subjectId)
+      if (!subject) throw new Error('Subject not found')
+      
+      const result = await generatePractical(subject.name, topic)
+      const imageUrl = generateLabImage(result.title, subject.name)
+      
+      setForm(p => ({
+        ...p,
+        title: result.title,
+        description: result.description,
+        objective: result.objective,
+        apparatus: result.apparatus,
+        safety: result.safety,
+        aiGenerated: true,
+        imageUrl,
+        steps: result.steps.map((s, idx) => ({
+          order: idx + 1,
+          instruction: s.instruction,
+          observation: s.observation || null,
+          calculation: s.calculation || null,
+          commonMistakes: s.commonMistakes || null,
+        })),
+      }))
+      setAiGenerated(true)
+      setTopic('')
+    } catch (e: unknown) {
+      setAiError((e as Error)?.message ?? 'Failed to generate practical')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
 
   return (
     <div className="space-y-5">
       {error && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
+      {aiError && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{aiError}</p>}
+      {aiGenerated && <p className="text-xs text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">✓ AI generated — review before saving</p>}
+
+      <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
+        Enter a topic, select the subject, and click Generate to fill title, description, objective, apparatus, safety, and procedure steps automatically.
+      </div>
+
+      {/* Topic + AI Generate */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 mb-1">Topic <span className="text-gray-300 font-normal">(for AI generation)</span></label>
+        <div className="flex gap-2">
+          <input
+            className={inputCls}
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="e.g. Acid-base titration using burette"
+          />
+          <button
+            onClick={handleAIGenerate}
+            disabled={aiLoading || !form.subjectId}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors shrink-0 whitespace-nowrap"
+            title={!form.subjectId ? 'Select subject first' : 'Generate using AI'}
+          >
+            {aiLoading ? (
+              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            {aiLoading ? 'Generating…' : 'Generate'}
+          </button>
+        </div>
+      </div>
 
       {/* Title */}
       <div>
@@ -154,13 +250,51 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
         />
       </div>
 
+      {/* Objective, Apparatus, Safety */}
+      <div className="grid grid-cols-1 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Objective <span className="text-gray-300 font-normal">(optional)</span></label>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={2}
+            value={form.objective || ''}
+            onChange={(e) => setField('objective', e.target.value || null)}
+            placeholder="What students should learn from this practical…"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Apparatus <span className="text-gray-300 font-normal">(optional)</span></label>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={2}
+            value={form.apparatus || ''}
+            onChange={(e) => setField('apparatus', e.target.value || null)}
+            placeholder="Equipment and materials needed…"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Safety <span className="text-gray-300 font-normal">(optional)</span></label>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={2}
+            value={form.safety || ''}
+            onChange={(e) => setField('safety', e.target.value || null)}
+            placeholder="Safety precautions and warnings…"
+          />
+        </div>
+      </div>
+
       {/* Subject + Premium */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Subject</label>
           <select className={inputCls} value={form.subjectId} onChange={(e) => setField('subjectId', e.target.value)}>
             <option value="">— Select subject —</option>
-            {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            {subjects.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}{s.examType ? ` (${s.examType.name})` : ''}
+              </option>
+            ))}
           </select>
         </div>
         <div>
@@ -197,52 +331,78 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
           </label>
           <span className="text-xs text-gray-400">Steps will be shown in order</span>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {form.steps.map((step, i) => (
-            <div key={i} className="flex items-start gap-2">
-              {/* Step number */}
-              <div className="w-6 h-9 flex items-center justify-center shrink-0">
-                <span className="text-xs font-semibold text-gray-400 tabular-nums">{i + 1}</span>
+            <div key={i}>
+              <div className="flex items-start gap-2 mb-2">
+                {/* Step number */}
+                <div className="w-6 h-9 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-semibold text-gray-400 tabular-nums">{i + 1}</span>
+                </div>
+                {/* Move buttons */}
+                <div className="flex flex-col gap-0.5 shrink-0 pt-1">
+                  <button
+                    onClick={() => moveStep(i, -1)}
+                    disabled={i === 0}
+                    className="w-5 h-4 rounded flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-20 transition-colors"
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => moveStep(i, 1)}
+                    disabled={i === form.steps.length - 1}
+                    className="w-5 h-4 rounded flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-20 transition-colors"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </div>
+                {/* Instruction */}
+                <textarea
+                  className={`flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition resize-none`}
+                  rows={2}
+                  value={step.instruction}
+                  onChange={(e) => setStep(i, 'instruction', e.target.value)}
+                  placeholder={`Step ${i + 1} instruction…`}
+                />
+                {form.steps.length > 1 && (
+                  <button
+                    onClick={() => removeStep(i)}
+                    className="w-7 h-7 mt-1 rounded-lg flex items-center justify-center text-gray-300 hover:bg-red-50 hover:text-red-400 transition-colors shrink-0"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-              {/* Move buttons */}
-              <div className="flex flex-col gap-0.5 shrink-0 pt-1">
-                <button
-                  onClick={() => moveStep(i, -1)}
-                  disabled={i === 0}
-                  className="w-5 h-4 rounded flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-20 transition-colors"
-                >
-                  <ChevronUp className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={() => moveStep(i, 1)}
-                  disabled={i === form.steps.length - 1}
-                  className="w-5 h-4 rounded flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-20 transition-colors"
-                >
-                  <ChevronDown className="w-3 h-3" />
-                </button>
+              {/* Observation, Calculation, Common Mistakes */}
+              <div className="ml-8 grid grid-cols-1 gap-2">
+                <textarea
+                  className={`${inputCls} resize-none`}
+                  rows={1}
+                  value={step.observation || ''}
+                  onChange={(e) => setStep(i, 'observation', e.target.value)}
+                  placeholder="Observation…"
+                />
+                <textarea
+                  className={`${inputCls} resize-none`}
+                  rows={1}
+                  value={step.calculation || ''}
+                  onChange={(e) => setStep(i, 'calculation', e.target.value)}
+                  placeholder="Calculation…"
+                />
+                <textarea
+                  className={`${inputCls} resize-none`}
+                  rows={1}
+                  value={step.commonMistakes || ''}
+                  onChange={(e) => setStep(i, 'commonMistakes', e.target.value)}
+                  placeholder="Common mistakes…"
+                />
               </div>
-              {/* Instruction */}
-              <textarea
-                className={`flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition resize-none`}
-                rows={2}
-                value={step.instruction}
-                onChange={(e) => setStep(i, e.target.value)}
-                placeholder={`Step ${i + 1} instruction…`}
-              />
-              {form.steps.length > 1 && (
-                <button
-                  onClick={() => removeStep(i)}
-                  className="w-7 h-7 mt-1 rounded-lg flex items-center justify-center text-gray-300 hover:bg-red-50 hover:text-red-400 transition-colors shrink-0"
-                >
-                  <Minus className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
           ))}
         </div>
         <button
           onClick={addStep}
-          className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+          className="mt-3 inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" /> Add step
         </button>
@@ -360,11 +520,23 @@ export default function AdminPracticalsPage() {
     return {
       title: p.title,
       description: p.description ?? '',
+      objective: p.objective ?? null,
+      apparatus: p.apparatus ?? null,
+      safety: p.safety ?? null,
       subjectId: p.subjectId ?? p.subject?.id ?? '',
       isPremium: p.isPremium,
+      aiGenerated: p.aiGenerated ?? false,
+      imageUrl: p.imageUrl ?? null,
       steps: p.steps?.length
-        ? [...p.steps].sort((a, b) => a.order - b.order).map((s) => ({ id: s.id, order: s.order, instruction: s.instruction }))
-        : [{ order: 1, instruction: '' }],
+        ? [...p.steps].sort((a, b) => a.order - b.order).map((s) => ({ 
+            id: s.id, 
+            order: s.order, 
+            instruction: s.instruction,
+            observation: s.observation ?? null,
+            calculation: s.calculation ?? null,
+            commonMistakes: s.commonMistakes ?? null,
+          }))
+        : [{ order: 1, instruction: '', observation: null, calculation: null, commonMistakes: null }],
     }
   }
 
@@ -455,7 +627,7 @@ export default function AdminPracticalsPage() {
               onChange={(e) => setFilterSubject(e.target.value)}
             >
               <option value="">All subjects</option>
-              {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.name} {s.examType ? `(${s.examType.name})` : ''}</option>)}
             </select>
           )}
           <select
@@ -527,9 +699,13 @@ export default function AdminPracticalsPage() {
                             </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            {p.subject
-                              ? <span className="text-sm text-gray-600">{p.subject.name}</span>
-                              : <span className="text-gray-300 text-xs italic">—</span>}
+                          {p.subject ? (
+                            <span className="text-sm text-gray-600">
+                              {p.subject.name}{p.subject.examType ? ` (${p.subject.examType.name})` : ''}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300 text-xs italic">—</span>
+                          )}
                           </td>
                           <td className="px-4 py-3">
                             <span className="inline-flex items-center gap-1 text-xs text-gray-500">

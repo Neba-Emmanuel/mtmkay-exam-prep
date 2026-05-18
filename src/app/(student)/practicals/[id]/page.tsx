@@ -30,6 +30,8 @@ interface PracticalDetail {
   objective: string | null
   apparatus: string | null
   safety: string | null
+  imageUrl?: string | null
+  aiGenerated?: boolean
   steps: PracticalStep[]
   questions: Array<{
     id: string
@@ -164,6 +166,18 @@ export default function PracticalDetailPage() {
 
           {/* ── Left: step reader ── */}
           <div className="space-y-4">
+
+            {/* AI-generated lab setup image */}
+            {practical.imageUrl && (
+              <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                <img
+                  src={practical.imageUrl}
+                  alt={`${practical.title} lab setup`}
+                  className="w-full max-h-72 object-contain bg-white p-4"
+                />
+                <p className="text-xs text-gray-400 px-4 py-2 bg-gray-50">AI-generated lab setup diagram</p>
+              </div>
+            )}
 
             {/* Progress bar */}
             <div>
