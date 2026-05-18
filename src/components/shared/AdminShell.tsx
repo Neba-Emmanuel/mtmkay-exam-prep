@@ -79,7 +79,7 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
   }
 
   /* Current page label for breadcrumb */
-  const currentPage = adminNav.find((n) => n.pathname === pathname || n.href === pathname)?.label ?? title
+  const currentPage = adminNav.find((n) => n.href === pathname)?.label ?? title
 
   return (
     <div className="min-h-screen bg-gray-50">
