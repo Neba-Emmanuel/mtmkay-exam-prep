@@ -14,9 +14,9 @@ export interface GeneratedPractical {
 }
 
 const GEMINI_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent'
 
-async function callGemini(prompt: string): Promise<string> {
+async function callGemini(prompt: string, maxToken = 2048): Promise<string> {
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
   if (!apiKey) throw new Error('NEXT_PUBLIC_GEMINI_API_KEY is not configured')
 
@@ -27,8 +27,11 @@ async function callGemini(prompt: string): Promise<string> {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 1024,
+        maxOutputTokens: maxToken,
       },
+    //   thinkingConfig: {
+    //     thinkingBudget: 0,
+    //   },
     }),
   })
 
@@ -73,14 +76,20 @@ Respond with ONLY valid JSON (no markdown, no backticks, no extra text). Use thi
 
 Make the steps clear and appropriate for secondary school level. Include 4-6 steps total.`
 
-  const text = await callGemini(prompt)
+  const text = await callGemini(prompt, 4096)
 
-  // Strip markdown fences if model ignores instructions
-  const jsonText = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim()
+  const jsonText = text
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim()
 
   try {
     return JSON.parse(jsonText) as GeneratedPractical
   } catch {
+    if (jsonText.length > 0 && !jsonText.endsWith('}')) {
+      throw new Error('Response was cut off — please try again')
+    }
     throw new Error('AI returned invalid JSON — try again')
   }
 }
@@ -97,7 +106,7 @@ Correct Answer: ${correctOptionText}
 
 Provide a brief, clear explanation (2-3 sentences maximum) of why this is the correct answer, suitable for a GCE or BEPC student. Be direct and educational.`
 
-  return callGemini(prompt)
+  return callGemini(prompt, 512)
 }
 
 export function generateLabImage(title: string, subject: string): string {
