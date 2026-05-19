@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { AdminShell } from '@/components/shared/AdminShell'
 import api from '@/lib/api'
-import { generatePractical, generateLabImage } from '@/lib/gemini'
+import { generatePractical } from '@/lib/gemini'
 import {
   Beaker, Plus, Search, Pencil, Trash2, X, Check,
-  ChevronUp, ChevronDown, ChevronsUpDown, Minus, GripVertical,
-  Crown, FlaskConical, ListOrdered, Sparkles,
+  ChevronUp, ChevronDown, ChevronsUpDown, Minus,
+  Crown, FlaskConical, ListOrdered, Sparkles, Image,
 } from 'lucide-react'
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -24,6 +24,7 @@ interface Step {
   observation?: string | null
   calculation?: string | null
   commonMistakes?: string | null
+  imageUrl?: string | null
 }
 
 interface Practical {
@@ -46,7 +47,6 @@ interface Practical {
 type SortKey = 'title' | 'subject' | 'steps' | 'isPremium'
 type SortDir = 'asc' | 'desc'
 
-const EMPTY_STEP = (): Step => ({ order: 0, instruction: '', observation: null, calculation: null, commonMistakes: null })
 const EMPTY_FORM = {
   title: '',
   description: '',
@@ -57,7 +57,7 @@ const EMPTY_FORM = {
   isPremium: false,
   aiGenerated: false,
   imageUrl: null as string | null,
-  steps: [{ order: 1, instruction: '', observation: null, calculation: null, commonMistakes: null }] as Step[],
+  steps: [{ order: 1, instruction: '', observation: null, calculation: null, commonMistakes: null, imageUrl: null }] as Step[],
 }
 
 /* ─── Modal ──────────────────────────────────────────── */
@@ -70,6 +70,7 @@ function Modal({ open, onClose, title, wide, children }: {
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
   }, [open, onClose])
+
   if (!open) return null
   return (
     <div
@@ -83,13 +84,32 @@ function Modal({ open, onClose, title, wide, children }: {
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="px-6 py-5 overflow-y-auto">{children}</div>
       </div>
       <style>{`@keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(0.98)}to{opacity:1;transform:none}}`}</style>
+    </div>
+  )
+}
+
+/* ─── Step Image ─────────────────────────────────────── */
+function StepImage({ imageUrl, stepOrder }: { imageUrl?: string | null; stepOrder: number }) {
+  const [error, setError] = useState(false)
+  if (!imageUrl || error) return null
+  return (
+    <div className="mt-2 rounded-lg overflow-hidden border border-gray-100">
+      <img
+        src={imageUrl}
+        alt={`Step ${stepOrder} illustration`}
+        className="w-full h-40 object-cover"
+        onError={() => setError(true)}
+      />
     </div>
   )
 }
@@ -104,11 +124,12 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
   loading: boolean
   error: string
 }) {
-  const [form, setForm] = useState<typeof EMPTY_FORM>(initial ?? EMPTY_FORM)
+  const [form, setForm] = useState<typeof EMPTY_FORM>(initial ?? { ...EMPTY_FORM })
   const [topic, setTopic] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [aiGenerated, setAiGenerated] = useState(false)
+  const [imageProgress, setImageProgress] = useState<string>('')
 
   const setField = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }))
 
@@ -121,7 +142,10 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
   const addStep = () =>
     setForm((p) => ({
       ...p,
-      steps: [...p.steps, { order: p.steps.length + 1, instruction: '', observation: null, calculation: null, commonMistakes: null }],
+      steps: [
+        ...p.steps,
+        { order: p.steps.length + 1, instruction: '', observation: null, calculation: null, commonMistakes: null, imageUrl: null },
+      ],
     }))
 
   const removeStep = (i: number) =>
@@ -144,24 +168,21 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
 
   const handleAIGenerate = async () => {
     setAiError('')
-    if (!form.subjectId) {
-      setAiError('Please select a subject first')
-      return
-    }
-    if (!topic.trim()) {
-      setAiError('Please enter a topic')
-      return
-    }
-    
+    setImageProgress('')
+    if (!form.subjectId) { setAiError('Please select a subject first'); return }
+    if (!topic.trim()) { setAiError('Please enter a topic'); return }
+
+    const subject = subjects.find((s) => s.id === form.subjectId)
+    if (!subject) { setAiError('Subject not found'); return }
+
     setAiLoading(true)
     try {
-      const subject = subjects.find(s => s.id === form.subjectId)
-      if (!subject) throw new Error('Subject not found')
-      
+      setImageProgress('Generating practical content…')
       const result = await generatePractical(subject.name, topic)
-      const imageUrl = generateLabImage(result.title, subject.name)
-      
-      setForm(p => ({
+
+      setImageProgress(`Generating ${result.steps.length} step illustrations…`)
+
+      setForm((p) => ({
         ...p,
         title: result.title,
         description: result.description,
@@ -169,19 +190,23 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
         apparatus: result.apparatus,
         safety: result.safety,
         aiGenerated: true,
-        imageUrl,
+        imageUrl: null,
         steps: result.steps.map((s, idx) => ({
           order: idx + 1,
           instruction: s.instruction,
-          observation: s.observation || null,
-          calculation: s.calculation || null,
-          commonMistakes: s.commonMistakes || null,
+          observation: s.observation ?? null,
+          calculation: s.calculation ?? null,
+          commonMistakes: s.commonMistakes ?? null,
+          imageUrl: s.imageUrl ?? null,
         })),
       }))
+
       setAiGenerated(true)
       setTopic('')
+      setImageProgress('')
     } catch (e: unknown) {
       setAiError((e as Error)?.message ?? 'Failed to generate practical')
+      setImageProgress('')
     } finally {
       setAiLoading(false)
     }
@@ -191,23 +216,40 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
 
   return (
     <div className="space-y-5">
-      {error && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
-      {aiError && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{aiError}</p>}
-      {aiGenerated && <p className="text-xs text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">✓ AI generated — review before saving</p>}
+      {error && (
+        <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+      )}
+      {aiError && (
+        <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{aiError}</p>
+      )}
+      {aiGenerated && (
+        <p className="text-xs text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
+          ✓ AI generated — review before saving
+        </p>
+      )}
+      {imageProgress && (
+        <div className="flex items-center gap-2 text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
+          <span className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin shrink-0" />
+          {imageProgress}
+        </div>
+      )}
 
       <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
-        Enter a topic, select the subject, and click Generate to fill title, description, objective, apparatus, safety, and procedure steps automatically.
+        Select a subject, enter a topic, and click Generate to auto-fill the practical with AI-generated step illustrations.
       </div>
 
       {/* Topic + AI Generate */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Topic <span className="text-gray-300 font-normal">(for AI generation)</span></label>
+        <label className="block text-xs font-medium text-gray-500 mb-1">
+          Topic <span className="text-gray-300 font-normal">(for AI generation)</span>
+        </label>
         <div className="flex gap-2">
           <input
             className={inputCls}
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="e.g. Acid-base titration using burette"
+            onKeyDown={(e) => { if (e.key === 'Enter') handleAIGenerate() }}
           />
           <button
             onClick={handleAIGenerate}
@@ -215,72 +257,11 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors shrink-0 whitespace-nowrap"
             title={!form.subjectId ? 'Select subject first' : 'Generate using AI'}
           >
-            {aiLoading ? (
-              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Sparkles className="w-3.5 h-3.5" />
-            )}
+            {aiLoading
+              ? <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : <Sparkles className="w-3.5 h-3.5" />}
             {aiLoading ? 'Generating…' : 'Generate'}
           </button>
-        </div>
-      </div>
-
-      {/* Title */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
-        <input
-          className={inputCls}
-          value={form.title}
-          onChange={(e) => setField('title', e.target.value)}
-          placeholder="e.g. Titration of Hydrochloric Acid"
-        />
-      </div>
-
-      {/* Description */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">
-          Description <span className="text-gray-300 font-normal">(optional)</span>
-        </label>
-        <textarea
-          className={`${inputCls} resize-none`}
-          rows={2}
-          value={form.description}
-          onChange={(e) => setField('description', e.target.value)}
-          placeholder="Brief overview of what this practical covers…"
-        />
-      </div>
-
-      {/* Objective, Apparatus, Safety */}
-      <div className="grid grid-cols-1 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Objective <span className="text-gray-300 font-normal">(optional)</span></label>
-          <textarea
-            className={`${inputCls} resize-none`}
-            rows={2}
-            value={form.objective || ''}
-            onChange={(e) => setField('objective', e.target.value || null)}
-            placeholder="What students should learn from this practical…"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Apparatus <span className="text-gray-300 font-normal">(optional)</span></label>
-          <textarea
-            className={`${inputCls} resize-none`}
-            rows={2}
-            value={form.apparatus || ''}
-            onChange={(e) => setField('apparatus', e.target.value || null)}
-            placeholder="Equipment and materials needed…"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Safety <span className="text-gray-300 font-normal">(optional)</span></label>
-          <textarea
-            className={`${inputCls} resize-none`}
-            rows={2}
-            value={form.safety || ''}
-            onChange={(e) => setField('safety', e.target.value || null)}
-            placeholder="Safety precautions and warnings…"
-          />
         </div>
       </div>
 
@@ -288,7 +269,11 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Subject</label>
-          <select className={inputCls} value={form.subjectId} onChange={(e) => setField('subjectId', e.target.value)}>
+          <select
+            className={inputCls}
+            value={form.subjectId}
+            onChange={(e) => setField('subjectId', e.target.value)}
+          >
             <option value="">— Select subject —</option>
             {subjects.map((s) => (
               <option key={s.id} value={s.id}>
@@ -322,6 +307,71 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
         </div>
       </div>
 
+      {/* Title */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
+        <input
+          className={inputCls}
+          value={form.title}
+          onChange={(e) => setField('title', e.target.value)}
+          placeholder="e.g. Titration of Hydrochloric Acid"
+        />
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 mb-1">
+          Description <span className="text-gray-300 font-normal">(optional)</span>
+        </label>
+        <textarea
+          className={`${inputCls} resize-none`}
+          rows={2}
+          value={form.description}
+          onChange={(e) => setField('description', e.target.value)}
+          placeholder="Brief overview of what this practical covers…"
+        />
+      </div>
+
+      {/* Objective, Apparatus, Safety */}
+      <div className="grid grid-cols-1 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Objective <span className="text-gray-300 font-normal">(optional)</span>
+          </label>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={2}
+            value={form.objective ?? ''}
+            onChange={(e) => setField('objective', e.target.value || null)}
+            placeholder="What students should learn from this practical…"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Apparatus <span className="text-gray-300 font-normal">(optional)</span>
+          </label>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={2}
+            value={form.apparatus ?? ''}
+            onChange={(e) => setField('apparatus', e.target.value || null)}
+            placeholder="Equipment and materials needed…"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Safety <span className="text-gray-300 font-normal">(optional)</span>
+          </label>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={2}
+            value={form.safety ?? ''}
+            onChange={(e) => setField('safety', e.target.value || null)}
+            placeholder="Safety precautions and warnings…"
+          />
+        </div>
+      </div>
+
       {/* Steps */}
       <div>
         <div className="flex items-center justify-between mb-2">
@@ -329,11 +379,11 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
             Procedure steps
             <span className="ml-1.5 text-gray-300 font-normal">({form.steps.length})</span>
           </label>
-          <span className="text-xs text-gray-400">Steps will be shown in order</span>
+          <span className="text-xs text-gray-400">Steps shown in order</span>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {form.steps.map((step, i) => (
-            <div key={i}>
+            <div key={i} className="rounded-xl border border-gray-100 bg-gray-50/50 p-3">
               <div className="flex items-start gap-2 mb-2">
                 {/* Step number */}
                 <div className="w-6 h-9 flex items-center justify-center shrink-0">
@@ -358,7 +408,7 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
                 </div>
                 {/* Instruction */}
                 <textarea
-                  className={`flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition resize-none`}
+                  className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition resize-none bg-white"
                   rows={2}
                   value={step.instruction}
                   onChange={(e) => setStep(i, 'instruction', e.target.value)}
@@ -373,26 +423,30 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
                   </button>
                 )}
               </div>
+
+              {/* Step illustration */}
+              <StepImage imageUrl={step.imageUrl} stepOrder={i + 1} />
+
               {/* Observation, Calculation, Common Mistakes */}
-              <div className="ml-8 grid grid-cols-1 gap-2">
+              <div className="ml-8 grid grid-cols-1 gap-2 mt-2">
                 <textarea
-                  className={`${inputCls} resize-none`}
+                  className={`${inputCls} resize-none bg-white`}
                   rows={1}
-                  value={step.observation || ''}
+                  value={step.observation ?? ''}
                   onChange={(e) => setStep(i, 'observation', e.target.value)}
                   placeholder="Observation…"
                 />
                 <textarea
-                  className={`${inputCls} resize-none`}
+                  className={`${inputCls} resize-none bg-white`}
                   rows={1}
-                  value={step.calculation || ''}
+                  value={step.calculation ?? ''}
                   onChange={(e) => setStep(i, 'calculation', e.target.value)}
                   placeholder="Calculation…"
                 />
                 <textarea
-                  className={`${inputCls} resize-none`}
+                  className={`${inputCls} resize-none bg-white`}
                   rows={1}
-                  value={step.commonMistakes || ''}
+                  value={step.commonMistakes ?? ''}
                   onChange={(e) => setStep(i, 'commonMistakes', e.target.value)}
                   placeholder="Common mistakes…"
                 />
@@ -420,7 +474,10 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
             : <Check className="w-4 h-4" />}
           {isEdit ? 'Save changes' : 'Create practical'}
         </button>
-        <button onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+        >
           Cancel
         </button>
       </div>
@@ -435,7 +492,9 @@ function DeleteConfirm({ practical, onConfirm, onCancel, loading, error }: {
   const steps = practical._count?.steps ?? practical.steps?.length ?? 0
   return (
     <div className="space-y-4">
-      {error && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+      )}
       <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-xl">
         <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
           <Trash2 className="w-4 h-4 text-red-600" />
@@ -450,7 +509,9 @@ function DeleteConfirm({ practical, onConfirm, onCancel, loading, error }: {
         </div>
       </div>
       <p className="text-sm text-gray-500">
-        This will permanently delete <span className="font-medium text-gray-700">{practical.title}</span> and all its procedure steps. This cannot be undone.
+        This will permanently delete{' '}
+        <span className="font-medium text-gray-700">{practical.title}</span>{' '}
+        and all its procedure steps. This cannot be undone.
       </p>
       <div className="flex items-center gap-2">
         <button
@@ -458,10 +519,15 @@ function DeleteConfirm({ practical, onConfirm, onCancel, loading, error }: {
           disabled={loading}
           className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
         >
-          {loading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+          {loading
+            ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <Trash2 className="w-4 h-4" />}
           Delete practical
         </button>
-        <button onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+        >
           Cancel
         </button>
       </div>
@@ -478,7 +544,6 @@ export default function AdminPracticalsPage() {
   const [filterSubject, setFilterSubject] = useState('')
   const [filterPremium, setFilterPremium] = useState('')
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'title', dir: 'asc' })
-
   const [addOpen, setAddOpen] = useState(false)
   const [editPractical, setEditPractical] = useState<Practical | null>(null)
   const [deletePractical, setDeletePractical] = useState<Practical | null>(null)
@@ -515,7 +580,6 @@ export default function AdminPracticalsPage() {
       return sort.dir === 'asc' ? cmp : -cmp
     })
 
-  /* ── Form builder ── */
   function toForm(p: Practical): typeof EMPTY_FORM {
     return {
       title: p.title,
@@ -528,19 +592,19 @@ export default function AdminPracticalsPage() {
       aiGenerated: p.aiGenerated ?? false,
       imageUrl: p.imageUrl ?? null,
       steps: p.steps?.length
-        ? [...p.steps].sort((a, b) => a.order - b.order).map((s) => ({ 
-            id: s.id, 
-            order: s.order, 
+        ? [...p.steps].sort((a, b) => a.order - b.order).map((s) => ({
+            id: s.id,
+            order: s.order,
             instruction: s.instruction,
             observation: s.observation ?? null,
             calculation: s.calculation ?? null,
             commonMistakes: s.commonMistakes ?? null,
+            imageUrl: s.imageUrl ?? null,
           }))
-        : [{ order: 1, instruction: '', observation: null, calculation: null, commonMistakes: null }],
+        : [{ order: 1, instruction: '', observation: null, calculation: null, commonMistakes: null, imageUrl: null }],
     }
   }
 
-  /* ── CRUD ── */
   const handleAdd = async (form: typeof EMPTY_FORM) => {
     setModalLoading(true); setModalError('')
     try {
@@ -598,14 +662,15 @@ export default function AdminPracticalsPage() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Admin Console</p>
             <h1 className="text-3xl font-bold tracking-tight text-blue-600">Practicals</h1>
-            <p className="text-sm text-gray-400 mt-1">{practicals.length} practical{practicals.length !== 1 ? 's' : ''} total</p>
+            <p className="text-sm text-gray-400 mt-1">
+              {practicals.length} practical{practicals.length !== 1 ? 's' : ''} total
+            </p>
           </div>
           <button
             onClick={() => { setModalError(''); setAddOpen(true) }}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors self-start sm:self-auto"
           >
-            <Plus className="w-4 h-4" />
-            Add practical
+            <Plus className="w-4 h-4" /> Add practical
           </button>
         </div>
 
@@ -627,7 +692,11 @@ export default function AdminPracticalsPage() {
               onChange={(e) => setFilterSubject(e.target.value)}
             >
               <option value="">All subjects</option>
-              {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.name} {s.examType ? `(${s.examType.name})` : ''}</option>)}
+              {subjectOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}{s.examType ? ` (${s.examType.name})` : ''}
+                </option>
+              ))}
             </select>
           )}
           <select
@@ -667,7 +736,9 @@ export default function AdminPracticalsPage() {
                     <th className={thCls} onClick={() => toggleSort('isPremium')}>
                       Access <SortIcon k="isPremium" />
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -676,13 +747,18 @@ export default function AdminPracticalsPage() {
                       <td colSpan={5} className="px-4 py-16 text-center">
                         <div className="flex flex-col items-center gap-2 text-gray-400">
                           <FlaskConical className="w-8 h-8 opacity-40" />
-                          <p className="text-sm">{search || filterSubject || filterPremium ? 'No practicals match your filters' : 'No practicals found'}</p>
+                          <p className="text-sm">
+                            {search || filterSubject || filterPremium
+                              ? 'No practicals match your filters'
+                              : 'No practicals found'}
+                          </p>
                         </div>
                       </td>
                     </tr>
                   ) : (
                     filtered.map((p) => {
                       const steps = p._count?.steps ?? p.steps?.length ?? 0
+                      const hasImages = p.steps?.some((s) => s.imageUrl)
                       return (
                         <tr key={p.id} className="hover:bg-gray-50/60 transition-colors group">
                           <td className="px-4 py-3">
@@ -691,7 +767,14 @@ export default function AdminPracticalsPage() {
                                 <Beaker className="w-4 h-4 text-teal-600" />
                               </div>
                               <div>
-                                <p className="font-medium text-gray-900">{p.title}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-medium text-gray-900">{p.title}</p>
+                                  {hasImages && (
+                                    <span title="Has step illustrations">
+                                      <Image className="w-3 h-3 text-indigo-400" />
+                                    </span>
+                                  )}
+                                </div>
                                 {p.description && (
                                   <p className="text-xs text-gray-400 mt-0.5 max-w-xs truncate">{p.description}</p>
                                 )}
@@ -699,13 +782,13 @@ export default function AdminPracticalsPage() {
                             </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                          {p.subject ? (
-                            <span className="text-sm text-gray-600">
-                              {p.subject.name}{p.subject.examType ? ` (${p.subject.examType.name})` : ''}
-                            </span>
-                          ) : (
-                            <span className="text-gray-300 text-xs italic">—</span>
-                          )}
+                            {p.subject ? (
+                              <span className="text-sm text-gray-600">
+                                {p.subject.name}{p.subject.examType ? ` (${p.subject.examType.name})` : ''}
+                              </span>
+                            ) : (
+                              <span className="text-gray-300 text-xs italic">—</span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <span className="inline-flex items-center gap-1 text-xs text-gray-500">

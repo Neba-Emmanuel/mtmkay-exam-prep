@@ -67,6 +67,27 @@ function truncate(s: string, n = 90) {
   return s.length > n ? `${s.slice(0, n)}…` : s
 }
 
+function prepareQuestionPayload(form: typeof EMPTY_FORM) {
+  const options = form.options
+    .map((option) => ({
+      id: option.id,
+      text: option.text.trim(),
+      isCorrect: option.isCorrect,
+    }))
+    .filter((option) => option.text.length > 0)
+
+  if (!form.subjectId) throw new Error('Select a subject')
+  if (options.length < 2) throw new Error('Add at least two answer options')
+  if (!options.some((option) => option.isCorrect)) throw new Error('Mark one answer option as correct')
+
+  return {
+    ...form,
+    text: form.text.trim(),
+    explanation: form.explanation.trim(),
+    options,
+  }
+}
+
 /* ─── Modal ──────────────────────────────────────────── */
 function Modal({ open, onClose, title, wide, children }: {
   open: boolean; onClose: () => void; title: string; wide?: boolean; children: React.ReactNode
@@ -160,7 +181,9 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
 
   const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
 
-  const hasCorrect = form.options.some((o) => o.isCorrect)
+  const filledOptions = form.options.filter((o) => o.text.trim()).length
+  const hasCorrect = form.options.some((o) => o.isCorrect && o.text.trim())
+  const canSubmit = form.text.trim() && form.subjectId && filledOptions >= 2 && hasCorrect
 
   return (
     <div className="space-y-5">
@@ -260,7 +283,7 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
           </button>
         )}
         {!hasCorrect && (
-          <p className="text-xs text-amber-600 mt-1">Mark one option as the correct answer.</p>
+          <p className="text-xs text-amber-600 mt-1">Mark one filled option as the correct answer.</p>
         )}
       </div>
 
@@ -295,7 +318,7 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
       <div className="flex items-center gap-2 pt-1">
         <button
           onClick={() => onSubmit(form)}
-          disabled={loading || !form.text.trim() || !hasCorrect}
+          disabled={loading || !canSubmit}
           className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50 transition-colors"
         >
           {loading
@@ -407,11 +430,12 @@ export default function AdminQuestionsPage() {
   const handleAdd = async (form: typeof EMPTY_FORM) => {
     setModalLoading(true); setModalError('')
     try {
-      const { data } = await api.post('/admin/questions', form)
+      const payload = prepareQuestionPayload(form)
+      const { data } = await api.post('/admin/questions', payload)
       setQuestions((q) => [data, ...q])
       setAddOpen(false)
     } catch (e: unknown) {
-      setModalError((e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to create question')
+      setModalError((e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? (e as Error)?.message ?? 'Failed to create question')
     } finally { setModalLoading(false) }
   }
 
@@ -419,11 +443,12 @@ export default function AdminQuestionsPage() {
     if (!editQuestion) return
     setModalLoading(true); setModalError('')
     try {
-      const { data } = await api.patch(`/admin/questions/${editQuestion.id}`, form)
+      const payload = prepareQuestionPayload(form)
+      const { data } = await api.patch(`/admin/questions/${editQuestion.id}`, payload)
       setQuestions((q) => q.map((x) => x.id === editQuestion.id ? data : x))
       setEditQuestion(null)
     } catch (e: unknown) {
-      setModalError((e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to update question')
+      setModalError((e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? (e as Error)?.message ?? 'Failed to update question')
     } finally { setModalLoading(false) }
   }
 
