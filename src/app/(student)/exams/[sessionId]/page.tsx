@@ -123,6 +123,13 @@ export default function ExamSessionPage() {
       .then((r) => {
         setQuestions(r.data.questions)
         setTimeRemaining(r.data.timeRemaining)
+        useExamStore.setState({
+          sessionId,
+          examId: r.data.subject,
+          isExamStarted: true,
+          isExamSubmitted: false,
+          answers: r.data.answers ?? {},
+        })
       })
       .catch(() => router.push('/exams'))
       .finally(() => setIsLoading(false))

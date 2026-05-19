@@ -71,9 +71,9 @@ export const useExamStore = create<ExamState>((set, get) => ({
         mode,
         timeLimit,
       })
-      const { id, questions, timeRemaining } = response.data
+      const { sessionId, id, questions, timeRemaining } = response.data
       set({
-        sessionId: id,
+        sessionId: sessionId ?? id,
         examId: subjectId,
         questions,
         timeRemaining,
