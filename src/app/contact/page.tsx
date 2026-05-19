@@ -2,6 +2,14 @@ import Link from 'next/link'
 import { Mail, Phone, MapPin, Clock, MessageCircle } from 'lucide-react'
 import { MarketingLayout } from '@/components/marketing/MarketingLayout'
 import { ContactForm } from '@/components/marketing/ContactForm'
+import { createMetadata } from '@/lib/seo'
+
+export const metadata = createMetadata({
+  title: 'Contact',
+  path: '/contact',
+  description:
+    'Contact MTMKay Exam Prep for student support, school partnerships, subscriptions, and questions about exam preparation in Cameroon.',
+})
 
 const contactMethods = [
   {

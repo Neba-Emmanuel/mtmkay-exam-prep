@@ -1,5 +1,12 @@
 import Link from 'next/link'
 import { BookOpen, BarChart3, Beaker, Briefcase } from 'lucide-react'
+import { createMetadata } from '@/lib/seo'
+
+export const metadata = createMetadata({
+  path: '/',
+  description:
+    'Prepare for GCE, HND, concours, and professional exams in Cameroon with CBT practice, past questions, instant results, analytics, and visual science practicals.',
+})
 
 export default function Home() {
   return (

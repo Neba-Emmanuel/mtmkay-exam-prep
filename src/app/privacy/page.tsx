@@ -1,6 +1,14 @@
 import Link from 'next/link'
 import { Shield, Database, Lock, UserCheck, Mail } from 'lucide-react'
 import { MarketingLayout } from '@/components/marketing/MarketingLayout'
+import { createMetadata } from '@/lib/seo'
+
+export const metadata = createMetadata({
+  title: 'Privacy Policy',
+  path: '/privacy',
+  description:
+    'Read the MTMKay Exam Prep privacy policy and learn how student account, exam activity, and platform usage data are protected.',
+})
 
 const sections = [
   {

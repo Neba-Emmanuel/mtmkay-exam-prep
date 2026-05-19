@@ -58,3 +58,78 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@layer utilities {
+  .exam-fade-in {
+    animation: examFadeIn 420ms ease both;
+  }
+
+  .exam-rise-in {
+    animation: examRiseIn 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .exam-pop-in {
+    animation: examPopIn 360ms cubic-bezier(0.2, 0.9, 0.25, 1.2) both;
+  }
+
+  .exam-blue-grid {
+    background:
+      radial-gradient(circle at 18% 12%, rgba(59, 130, 246, 0.14), transparent 30%),
+      radial-gradient(circle at 84% 20%, rgba(14, 165, 233, 0.13), transparent 28%),
+      linear-gradient(135deg, #f8fbff 0%, #eff6ff 46%, #f0f9ff 100%);
+  }
+
+  .exam-soft-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .exam-soft-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%);
+    background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.34) 48%, transparent 76%);
+    transition: transform 620ms ease;
+    pointer-events: none;
+  }
+
+  .exam-soft-sheen:hover::after {
+    transform: translateX(120%);
+  }
+
+  @keyframes examFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes examRiseIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes examPopIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes examFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes examPulseBlue {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.28); }
+    50% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .exam-fade-in,
+    .exam-rise-in,
+    .exam-pop-in,
+    .exam-soft-sheen::after {
+      animation: none;
+      transition: none;
+    }
+  }
+}

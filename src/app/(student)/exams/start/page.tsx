@@ -24,22 +24,26 @@ function LoadingSteps({ mode }: { mode: 'EXAM' | 'PRACTICE' }) {
 
   const Icon = mode === 'EXAM' ? ClipboardList : Zap
   const accent = mode === 'EXAM'
-    ? { bg: '#EFF6FF', text: '#1D4ED8', ring: '#BFDBFE' }
-    : { bg: '#F0FDF4', text: '#15803D', ring: '#BBF7D0' }
+    ? { bg: '#EFF6FF', text: '#1D4ED8', ring: '#BFDBFE', deep: '#1E3A8A' }
+    : { bg: '#F0F9FF', text: '#0284C7', ring: '#BAE6FD', deep: '#075985' }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-sm text-center space-y-6">
+    <div className="min-h-screen exam-blue-grid flex items-center justify-center p-6">
+      <div className="w-full max-w-sm text-center space-y-6 exam-rise-in">
 
         {/* Icon blob */}
         <div className="relative inline-flex items-center justify-center mx-auto">
           <div
-            className="absolute w-24 h-24 rounded-full opacity-30 animate-ping"
+            className="absolute w-28 h-28 rounded-full opacity-25 animate-ping"
             style={{ background: accent.ring }}
           />
           <div
-            className="relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-sm"
-            style={{ background: accent.bg }}
+            className="absolute w-36 h-36 rounded-full border border-white/70"
+            style={{ animation: 'examFloat 3.2s ease-in-out infinite' }}
+          />
+          <div
+            className="relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg exam-pop-in"
+            style={{ background: `linear-gradient(135deg, ${accent.bg} 0%, white 56%, ${accent.ring} 100%)`, animation: 'examPulseBlue 2s ease-in-out infinite' }}
           >
             <Icon className="w-9 h-9" style={{ color: accent.text }} />
           </div>
@@ -50,7 +54,7 @@ function LoadingSteps({ mode }: { mode: 'EXAM' | 'PRACTICE' }) {
           <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: accent.text }}>
             {mode === 'EXAM' ? 'Exam mode' : 'Practice mode'}
           </p>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Starting your session</h1>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: accent.deep }}>Starting your session</h1>
         </div>
 
         {/* Spinner + step text */}
@@ -59,7 +63,7 @@ function LoadingSteps({ mode }: { mode: 'EXAM' | 'PRACTICE' }) {
             className="w-8 h-8 rounded-full border-2 border-gray-200 animate-spin"
             style={{ borderTopColor: accent.text }}
           />
-          <p className="text-sm text-gray-500 h-5 transition-all duration-300">
+          <p className="text-sm text-blue-700 h-5 transition-all duration-300 exam-fade-in" key={step}>
             {STEPS[step]}
           </p>
         </div>

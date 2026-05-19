@@ -10,6 +10,14 @@ import {
   Heart,
 } from 'lucide-react'
 import { MarketingLayout } from '@/components/marketing/MarketingLayout'
+import { createMetadata } from '@/lib/seo'
+
+export const metadata = createMetadata({
+  title: 'About',
+  path: '/about',
+  description:
+    'Learn about MTMKay Exam Prep, a Cameroon-focused digital learning platform for CBT practice, exam analytics, and visual science practicals.',
+})
 
 const stats = [
   { value: '5,000+', label: 'Students preparing' },
