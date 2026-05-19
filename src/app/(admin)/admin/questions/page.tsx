@@ -418,7 +418,7 @@ export default function AdminQuestionsPage() {
     return {
       text: q.text,
       explanation: q.explanation ?? '',
-      difficulty: q.difficulty ?? 'medium',
+      difficulty: (q.difficulty ?? 'medium').toLowerCase(),
       subjectId: q.subjectId ?? q.subject?.id ?? '',
       options: q.options?.length
         ? q.options.map((o) => ({ id: o.id, text: o.text, isCorrect: o.isCorrect }))
@@ -601,8 +601,9 @@ export default function AdminQuestionsPage() {
                             )}
                           </td>
                           <td className="px-4 py-3">
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
                               <button
+                                type="button"
                                 onClick={() => { setModalError(''); setEditQuestion(q) }}
                                 className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                 title="Edit"
@@ -610,6 +611,7 @@ export default function AdminQuestionsPage() {
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
+                                type="button"
                                 onClick={() => { setModalError(''); setDeleteQuestion(q) }}
                                 className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                                 title="Delete"
@@ -651,6 +653,7 @@ export default function AdminQuestionsPage() {
       <Modal open={!!editQuestion} onClose={() => setEditQuestion(null)} title="Edit question" wide>
         {editQuestion && (
           <QuestionForm
+            key={editQuestion.id}
             isEdit
             subjects={subjects}
             initial={toForm(editQuestion)}
