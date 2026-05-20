@@ -1,3 +1,5 @@
+import api from '@/lib/api'
+
 export interface GeneratedPractical {
   title: string
   description: string
@@ -115,44 +117,16 @@ export async function generateLabImage(
   subject: string,
   stepInstruction?: string
 ): Promise<string> {
-  const apiKey = process.env.NEXT_PUBLIC_HF_API_KEY
-  if (!apiKey) throw new Error('NEXT_PUBLIC_HF_API_KEY is not configured')
+  const response = await api.post('/admin/practicals/generate-image', {
+    title,
+    subject,
+    stepInstruction,
+  })
 
-  const prompt = stepInstruction
-    ? `Scientific laboratory illustration: ${stepInstruction}. ${subject} experiment, clean educational diagram, labeled equipment, white background, no people, high quality`
-    : `${title} ${subject} laboratory experiment setup, clean educational scientific illustration, labeled equipment, white background, high quality`
-
-  const response = await fetch(
-    'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          width: 512,
-          height: 512,
-          num_inference_steps: 20,
-          guidance_scale: 7.5,
-        },
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => null)
-    throw new Error(err?.error ?? `Image generation failed: ${response.status}`)
+  const imageUrl = response.data?.imageUrl
+  if (typeof imageUrl !== 'string' || !imageUrl.startsWith('data:image/')) {
+    throw new Error('Image generation returned an invalid image')
   }
 
-  // Returns a blob — convert to base64 data URL
-  const blob = await response.blob()
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
-  })
+  return imageUrl
 }
