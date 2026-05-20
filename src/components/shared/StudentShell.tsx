@@ -70,8 +70,8 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
 function Avatar({ firstName, lastName }: { firstName: string; lastName: string }) {
   const initials = `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase()
   return (
-    <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/20 flex items-center justify-center shrink-0">
-      <span className="text-xs font-semibold text-blue-300">{initials}</span>
+    <div className="w-8 h-8 rounded-full bg-blue-600 border border-blue-400/20 flex items-center justify-center shrink-0">
+      <span className="text-xs font-semibold text-white">{initials}</span>
     </div>
   )
 }
@@ -225,7 +225,7 @@ export function StudentShell({
               <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-0.5">
                 <span>MTMKay</span>
                 <ChevronRight className="w-3 h-3" />
-                <span className="text-gray-600 font-medium">{currentPage}</span>
+                <span className="text-gray-600 font-medium truncate">{currentPage}</span>
               </div>
               <h1 className="text-base font-bold text-blue-700 leading-tight truncate">{title}</h1>
             </div>

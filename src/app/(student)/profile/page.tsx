@@ -210,7 +210,7 @@ export default function ProfilePage() {
               {profile?.profilePhoto ? (
                 <Image src={profile.profilePhoto} alt="Profile" width={80} height={80} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg font-bold">
+                <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white text-lg font-bold">
                   {initials}
                 </div>
               )}

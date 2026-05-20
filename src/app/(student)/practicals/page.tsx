@@ -20,7 +20,7 @@ interface Practical {
 const SUBJECTS = ['All', 'Physics', 'Chemistry', 'Biology']
 
 const SUBJECT_STYLE: Record<string, { bg: string; text: string; strip: string }> = {
-  Physics:   { bg: '#EFF6FF', text: '#080a11', strip: '#040c18' },
+  Physics:   { bg: '#EFF6FF', text: '#1D4ED8', strip: '#3B82F6' },
   Chemistry: { bg: '#F0FDF4', text: '#15803D', strip: '#22C55E' },
   Biology:   { bg: '#FDF4FF', text: '#7E22CE', strip: '#A855F7' },
 }

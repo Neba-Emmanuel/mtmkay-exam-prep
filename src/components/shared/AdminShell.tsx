@@ -170,7 +170,7 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
               <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-0.5">
                 <span>Admin</span>
                 <ChevronRight className="w-3 h-3" />
-                <span className="text-gray-600 font-medium">{currentPage}</span>
+                <span className="text-gray-600 font-medium truncate">{currentPage}</span>
               </div>
               <h1 className="text-base font-bold text-blue-700 leading-tight truncate">{title}</h1>
             </div>

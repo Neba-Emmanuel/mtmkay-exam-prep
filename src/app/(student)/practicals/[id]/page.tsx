@@ -41,14 +41,28 @@ interface PracticalDetail {
   }>
 }
 
-/* ─── Subject color ──────────────────────────────────── */
-const SUBJECT_STYLE: Record<string, { bg: string; text: string; strip: string }> = {
-  Physics:   { bg: '#EFF6FF', text: '#1D4ED8', strip: '#3B82F6' },
-  Chemistry: { bg: '#F0FDF4', text: '#15803D', strip: '#22C55E' },
-  Biology:   { bg: '#FDF4FF', text: '#7E22CE', strip: '#A855F7' },
+/* ─── Brand blue token map ───────────────────────────── */
+const B = {
+  50:  '#EFF6FF',
+  100: '#DBEAFE',
+  200: '#BFDBFE',
+  300: '#93C5FD',
+  400: '#60A5FA',
+  500: '#3B82F6',
+  600: '#2563EB',
+  700: '#1D4ED8',
+  800: '#1E40AF',
+  900: '#1E3A8A',
+}
+
+/* ─── Subject accent ─────────────────────────────────── */
+const SUBJECT_STYLE: Record<string, { bg: string; text: string; strip: string; border: string }> = {
+  Physics:   { bg: B[50],      text: B[700],    strip: B[500],    border: B[200] },
+  Chemistry: { bg: '#F0FDF4',  text: '#15803D', strip: '#22C55E', border: '#BBF7D0' },
+  Biology:   { bg: '#FDF4FF',  text: '#7E22CE', strip: '#A855F7', border: '#E9D5FF' },
 }
 function subjectStyle(s: string) {
-  return SUBJECT_STYLE[s] ?? { bg: '#F1F5F9', text: '#475569', strip: '#94A3B8' }
+  return SUBJECT_STYLE[s] ?? { bg: B[50], text: B[700], strip: B[400], border: B[200] }
 }
 
 /* ─── Info box ───────────────────────────────────────── */
@@ -91,8 +105,11 @@ export default function PracticalDetailPage() {
       <StudentShell title="Practical">
         <div className="flex items-center justify-center h-60">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
-            <p className="text-sm text-gray-400">Loading practical…</p>
+            <div
+              className="w-9 h-9 rounded-full border-2 animate-spin"
+              style={{ borderColor: B[100], borderTopColor: B[500] }}
+            />
+            <p className="text-sm" style={{ color: B[400] }}>Loading practical…</p>
           </div>
         </div>
       </StudentShell>
@@ -102,12 +119,13 @@ export default function PracticalDetailPage() {
   if (!practical) {
     return (
       <StudentShell title="Practical">
-        <div className="flex flex-col items-center justify-center py-20 gap-4 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-20 gap-4" style={{ color: B[300] }}>
           <FlaskConical className="w-10 h-10 opacity-40" />
           <p className="text-sm">Practical not found.</p>
           <Link
             href="/practicals"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+            style={{ border: `1px solid ${B[200]}`, color: B[600], background: B[50] }}
           >
             <ChevronLeft className="w-4 h-4" /> Back to practicals
           </Link>
@@ -136,7 +154,8 @@ export default function PracticalDetailPage() {
       headerAction={
         <Link
           href="/practicals"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+          style={{ border: `1px solid ${B[200]}`, color: B[600], background: B[50] }}
         >
           <ChevronLeft className="w-3.5 h-3.5" /> Practicals
         </Link>
@@ -145,19 +164,24 @@ export default function PracticalDetailPage() {
       <div className="space-y-6 pb-12">
 
         {/* Title strip */}
-        <div className="border-b border-gray-100 pb-5">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="pb-5" style={{ borderBottom: `1px solid ${B[100]}` }}>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span
               className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
-              style={{ background: ss.bg, color: ss.text }}
+              style={{ background: ss.bg, color: ss.text, border: `1px solid ${ss.border}` }}
             >
               {practical.subject}
             </span>
-            <span className="text-xs text-gray-400">{totalSteps} steps</span>
+            <span className="text-xs" style={{ color: 'grey' }}>{totalSteps} steps</span>
+            
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">{practical.title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: B[600] }}>
+            {practical.title}
+          </h1>
           {practical.objective && (
-            <p className="text-sm text-gray-500 mt-2 max-w-2xl">{practical.objective}</p>
+            <p className="text-sm mt-2 max-w-2xl leading-relaxed" style={{ color: 'grey' }}>
+              {practical.objective}
+            </p>
           )}
         </div>
 
@@ -167,65 +191,74 @@ export default function PracticalDetailPage() {
           {/* ── Left: step reader ── */}
           <div className="space-y-4">
 
-            {/* AI-generated lab setup image */}
+            {/* AI lab image */}
             {practical.imageUrl && (
-              <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+              <div className="rounded-2xl overflow-hidden shadow-sm" style={{ border: `1px solid ${B[100]}` }}>
                 <img
                   src={practical.imageUrl}
                   alt={`${practical.title} lab setup`}
                   className="w-full max-h-72 object-contain bg-white p-4"
                 />
-                <p className="text-xs text-gray-400 px-4 py-2 bg-gray-50">AI-generated lab setup diagram</p>
+                <p className="text-xs px-4 py-2" style={{ color: B[400], background: B[50] }}>
+                  AI-generated lab setup diagram
+                </p>
               </div>
             )}
 
             {/* Progress bar */}
             <div>
-              <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
-                <span>Step <span className="font-semibold text-gray-700">{activeStep + 1}</span> of {totalSteps}</span>
+              <div className="flex items-center justify-between text-xs mb-1.5" style={{ color: 'grey' }}>
+                <span>
+                  Step <span className="font-semibold" style={{ color: 'grey' }}>{activeStep + 1}</span> of {totalSteps}
+                </span>
                 <span>{Math.round(progress)}% complete</span>
               </div>
-              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: B[100] }}>
                 <div
                   className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%`, background: ss.strip }}
+                  style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${B[400]}, ${B[600]})` }}
                 />
               </div>
             </div>
 
             {/* Step card */}
             {step && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                {/* Colored strip */}
-                <div className="h-1 w-full" style={{ background: ss.strip }} />
+              <div
+                className="rounded-2xl shadow-sm overflow-hidden"
+                style={{ background: 'white', border: `1px solid ${B[100]}` }}
+              >
+                {/* Blue gradient top strip */}
+                <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${B[400]}, ${B[700]})` }} />
 
                 <div className="p-6 sm:p-8 space-y-5">
                   {/* Step heading */}
                   <div className="flex items-start gap-3">
                     <span
                       className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 mt-0.5"
-                      style={{ background: ss.bg, color: ss.text }}
+                      style={{ background: B[500], color: 'white' }}
                     >
                       {step.orderIndex}
                     </span>
-                    <h2 className="text-lg font-bold text-gray-900 leading-snug">{step.title}</h2>
+                    <h2 className="text-lg font-bold leading-snug" style={{ color: B[800] }}>{step.title}</h2>
                   </div>
 
                   {/* Description */}
-                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-sm sm:text-base">
+                  <p className="whitespace-pre-wrap leading-relaxed text-sm sm:text-base text-gray-700">
                     {step.description}
                   </p>
 
                   {/* Media */}
                   {step.media?.url && (
-                    <div className="rounded-xl overflow-hidden border border-gray-100">
+                    <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${B[100]}` }}>
                       <img
                         src={step.media.url}
                         alt={step.media.caption ?? step.title}
                         className="w-full max-h-72 object-cover"
                       />
                       {step.media.caption && (
-                        <p className="text-xs text-gray-400 px-3 py-2 bg-gray-50">{step.media.caption}</p>
+                        <p className="text-xs px-3 py-2" style={{ color: B[400], background: B[50] }}>
+                          {step.media.caption}
+                        </p>
                       )}
                     </div>
                   )}
@@ -244,7 +277,7 @@ export default function PracticalDetailPage() {
                       icon={Calculator}
                       title="Calculation"
                       content={step.calculation}
-                      style={{ bg: '#EFF6FF', border: '#BFDBFE', titleColor: '#1E40AF', textColor: '#1D4ED8', iconColor: '#3B82F6' }}
+                      style={{ bg: B[50], border: B[200], titleColor: B[800], textColor: B[700], iconColor: B[500] }}
                     />
                   )}
                   {step.commonMistakes && (
@@ -264,12 +297,13 @@ export default function PracticalDetailPage() {
               <button
                 onClick={() => setActiveStep((s) => s - 1)}
                 disabled={isFirst}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ border: `1px solid ${B[200]}`, color: B[600], background: B[50] }}
               >
                 <ChevronLeft className="w-4 h-4" /> Previous
               </button>
 
-              {/* Step dots */}
+              {/* Step progress dots */}
               <div className="flex items-center gap-1.5">
                 {practical.steps.map((_, i) => (
                   <button
@@ -279,7 +313,7 @@ export default function PracticalDetailPage() {
                     style={{
                       width:  i === activeStep ? 20 : 6,
                       height: 6,
-                      background: i <= activeStep ? ss.strip : '#E5E7EB',
+                      background: i < activeStep ? B[400] : i === activeStep ? B[600] : B[100],
                     }}
                   />
                 ))}
@@ -288,22 +322,28 @@ export default function PracticalDetailPage() {
               <button
                 onClick={() => setActiveStep((s) => s + 1)}
                 disabled={isLast}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ border: `1px solid ${B[200]}`, color: B[600], background: B[50] }}
               >
                 Next <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Completion message */}
+            {/* Completion banner */}
             {isLast && (
               <div
-                className="flex items-center gap-3 p-4 rounded-2xl border"
-                style={{ background: ss.bg, borderColor: ss.strip + '40' }}
+                className="flex items-center gap-3 p-4 rounded-2xl"
+                style={{ background: B[50], border: `1px solid ${B[200]}` }}
               >
-                <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: ss.strip }} />
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                  style={{ background: B[100] }}
+                >
+                  <CheckCircle2 className="w-5 h-5" style={{ color: B[500] }} />
+                </div>
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: ss.text }}>All steps complete!</p>
-                  <p className="text-xs mt-0.5" style={{ color: ss.text + 'bb' }}>
+                  <p className="text-sm font-semibold" style={{ color: B[700] }}>All steps complete!</p>
+                  <p className="text-xs mt-0.5" style={{ color: B[400] }}>
                     Review the questions below to test your understanding.
                   </p>
                 </div>
@@ -312,27 +352,62 @@ export default function PracticalDetailPage() {
 
             {/* Review questions */}
             {practical.questions?.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <BookOpen className="w-4 h-4 text-gray-400" />
-                  <p className="text-sm font-semibold text-gray-900">Review questions</p>
+              <div
+                className="rounded-2xl shadow-sm p-6 space-y-4"
+                style={{ background: 'white', border: `1px solid ${B[100]}` }}
+              >
+                {/* Section header */}
+                <div
+                  className="flex items-center gap-2 pb-3 mb-1"
+                  style={{ borderBottom: `1px solid ${B[50]}` }}
+                >
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: B[50] }}
+                  >
+                    <BookOpen className="w-4 h-4" style={{ color: B[500] }} />
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: B[700] }}>Review questions</p>
+                  <span
+                    className="ml-auto text-xs px-2 py-0.5 rounded-full"
+                    style={{ background: B[100], color: B[600] }}
+                  >
+                    {practical.questions.length} questions
+                  </span>
                 </div>
+
                 {practical.questions.map((q, i) => {
                   const revealed = revealedAnswers.has(q.id)
                   return (
-                    <div key={q.id} className="border border-gray-100 rounded-xl p-4 space-y-2">
+                    <div
+                      key={q.id}
+                      className="rounded-xl p-4 space-y-2 transition-all"
+                      style={{
+                        border: `1px solid ${revealed ? B[200] : B[100]}`,
+                        background: revealed ? B[50] : 'white',
+                      }}
+                    >
                       <p className="text-sm font-medium text-gray-800">
-                        <span className="text-gray-400 mr-1.5">{i + 1}.</span>{q.question}
+                        <span className="mr-1.5 font-bold" style={{ color: B[400] }}>{i + 1}.</span>
+                        {q.question}
                       </p>
                       {revealed ? (
-                        <div className="space-y-1.5">
-                          <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2">{q.answer}</p>
+                        <div className="space-y-1.5 pt-1">
+                          <p
+                            className="text-sm rounded-lg px-3 py-2 leading-relaxed"
+                            style={{ color: B[800], background: B[100], border: `1px solid ${B[200]}` }}
+                          >
+                            {q.answer}
+                          </p>
                           {q.explanation && (
-                            <p className="text-xs text-gray-400 italic">{q.explanation}</p>
+                            <p className="text-xs italic leading-relaxed" style={{ color: B[400] }}>
+                              {q.explanation}
+                            </p>
                           )}
                           <button
                             onClick={() => toggleAnswer(q.id)}
-                            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                            className="text-xs font-medium transition-colors"
+                            style={{ color: B[400] }}
                           >
                             Hide answer
                           </button>
@@ -340,7 +415,8 @@ export default function PracticalDetailPage() {
                       ) : (
                         <button
                           onClick={() => toggleAnswer(q.id)}
-                          className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+                          className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                          style={{ border: `1px solid ${B[200]}`, color: B[600], background: 'white' }}
                         >
                           <Eye className="w-3.5 h-3.5" /> Reveal answer
                         </button>
@@ -356,9 +432,17 @@ export default function PracticalDetailPage() {
           <aside className="space-y-4">
 
             {/* Step list */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">All steps</p>
-              <div className="space-y-1">
+            <div
+              className="rounded-2xl shadow-sm p-4"
+              style={{ background: 'white', border: `1px solid ${B[100]}` }}
+            >
+              <p
+                className="text-xs font-semibold uppercase tracking-wide mb-3"
+                style={{ color: B[500] }}
+              >
+                All steps
+              </p>
+              <div className="space-y-0.5">
                 {practical.steps.map((s, i) => {
                   const done    = i < activeStep
                   const current = i === activeStep
@@ -366,21 +450,32 @@ export default function PracticalDetailPage() {
                     <button
                       key={s.id}
                       onClick={() => setActiveStep(i)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm transition-all"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
                       style={current
-                        ? { background: ss.bg, color: ss.text }
-                        : { color: done ? '#6B7280' : '#374151' }}
+                        ? { background: B[50], border: `1px solid ${B[100]}` }
+                        : { background: 'transparent' }}
                     >
                       <span className="shrink-0">
-                        {done
-                          ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                          : current
-                          ? <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center" style={{ borderColor: ss.strip }}>
-                              <div className="w-1.5 h-1.5 rounded-full" style={{ background: ss.strip }} />
-                            </div>
-                          : <Circle className="w-4 h-4 text-gray-300" />}
+                        {done ? (
+                          <CheckCircle2 className="w-4 h-4" style={{ color: B[400] }} />
+                        ) : current ? (
+                          <div
+                            className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                            style={{ borderColor: B[500] }}
+                          >
+                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: B[500] }} />
+                          </div>
+                        ) : (
+                          <Circle className="w-4 h-4" style={{ color: B[200] }} />
+                        )}
                       </span>
-                      <span className={`flex-1 text-xs leading-snug ${done ? 'line-through text-gray-400' : ''}`}>
+                      <span
+                        className="flex-1 text-xs leading-snug"
+                        style={{
+                          color: current ? B[700] : done ? B[300] : '#374151',
+                          textDecoration: done ? 'line-through' : 'none',
+                        }}
+                      >
                         {s.orderIndex}. {s.title}
                       </span>
                     </button>
@@ -391,21 +486,24 @@ export default function PracticalDetailPage() {
 
             {/* Apparatus */}
             {practical.apparatus && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div
+                className="rounded-2xl shadow-sm p-4"
+                style={{ background: 'white', border: `1px solid ${B[100]}` }}
+              >
                 <div className="flex items-center gap-2 mb-3">
-                  <Wrench className="w-4 h-4 text-gray-400" />
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Apparatus</p>
+                  <Wrench className="w-4 h-4" style={{ color: B[400] }} />
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: B[600] }}>Apparatus</p>
                 </div>
-                <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">{practical.apparatus}</p>
+                <p className="text-xs leading-relaxed text-gray-600 whitespace-pre-wrap">{practical.apparatus}</p>
               </div>
             )}
 
             {/* Safety */}
             {practical.safety && (
-              <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+              <div className="rounded-2xl p-4" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
                 <div className="flex items-center gap-2 mb-3">
                   <Shield className="w-4 h-4 text-red-500" />
-                  <p className="text-xs font-semibold text-red-600 uppercase tracking-wide">Safety</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-red-600">Safety</p>
                 </div>
                 <p className="text-xs text-red-700 whitespace-pre-wrap leading-relaxed">{practical.safety}</p>
               </div>

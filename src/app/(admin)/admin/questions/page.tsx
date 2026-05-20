@@ -444,7 +444,8 @@ export default function AdminQuestionsPage() {
     setModalLoading(true); setModalError('')
     try {
       const payload = prepareQuestionPayload(form)
-      const { data } = await api.patch(`/admin/questions/${editQuestion.id}`, payload)
+      const endpoint = `/admin/questions/${editQuestion.id}`
+      const { data } = await api.put(endpoint, payload)
       setQuestions((q) => q.map((x) => x.id === editQuestion.id ? data : x))
       setEditQuestion(null)
     } catch (e: unknown) {
