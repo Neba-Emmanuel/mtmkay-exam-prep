@@ -99,16 +99,16 @@ export default function ExamsPage() {
 
         {/* Header */}
         <div className="border-b border-blue-100 pb-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-1">Exams</p>
-          <h1 className="text-3xl font-bold tracking-tight text-blue-950">Start a session</h1>
-          <p className="text-sm text-blue-400 mt-1">Pick a category, then choose a subject</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Exams</p>
+          <h1 className="text-3xl font-bold tracking-tight text-blue-600">Start a session</h1>
+          <p className="text-sm text-gray-400 mt-1">Pick a category, then choose a subject</p>
         </div>
 
         {/* Loading */}
         {isLoading ? (
           <div className="flex items-center justify-center h-52">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+              <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
               <p className="text-sm text-gray-400">Loading exam types…</p>
             </div>
           </div>
@@ -176,7 +176,7 @@ export default function ExamsPage() {
 
                 {subjectsLoading ? (
                   <div className="flex items-center justify-center h-40">
-                    <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+                    <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
                   </div>
                 ) : filteredSubjects.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-40 text-gray-400 gap-2">

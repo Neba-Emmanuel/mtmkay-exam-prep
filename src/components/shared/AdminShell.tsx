@@ -172,7 +172,7 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
                 <ChevronRight className="w-3 h-3" />
                 <span className="text-gray-600 font-medium">{currentPage}</span>
               </div>
-              <h1 className="text-base font-bold text-gray-900 leading-tight truncate">{title}</h1>
+              <h1 className="text-base font-bold text-blue-700 leading-tight truncate">{title}</h1>
             </div>
 
             {/* Logout — desktop */}

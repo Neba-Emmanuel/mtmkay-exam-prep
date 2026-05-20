@@ -91,7 +91,7 @@ export default function PracticalDetailPage() {
       <StudentShell title="Practical">
         <div className="flex items-center justify-center h-60">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+            <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
             <p className="text-sm text-gray-400">Loading practical…</p>
           </div>
         </div>

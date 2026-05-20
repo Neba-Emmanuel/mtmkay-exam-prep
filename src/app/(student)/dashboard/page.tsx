@@ -126,7 +126,7 @@ export default function DashboardPage() {
       <StudentShell title="Dashboard">
         <div className="flex items-center justify-center h-72">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+            <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
             <p className="text-sm text-gray-400">Loading your dashboard…</p>
           </div>
         </div>
@@ -141,7 +141,7 @@ export default function DashboardPage() {
       headerAction={
         <Link
           href="/exams"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-700 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
         >
           <Zap className="w-3.5 h-3.5" /> Start exam
         </Link>
@@ -156,7 +156,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-gray-100 pb-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Overview</p>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+            <h1 className="text-2xl font-bold tracking-tight text-blue-700">
               Welcome back, {displayUser?.firstName ?? 'Student'} 👋
             </h1>
             <p className="text-sm text-gray-400 mt-1">Here's how your prep is going</p>
@@ -303,7 +303,7 @@ export default function DashboardPage() {
                   <p className="text-sm">No exams yet</p>
                   <Link
                     href="/exams"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-700 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
                   >
                     <Zap className="w-3.5 h-3.5" /> Start your first exam
                   </Link>

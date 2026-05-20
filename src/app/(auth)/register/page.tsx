@@ -25,8 +25,12 @@ function PasswordInput({
         type={show ? 'text' : 'password'}
         value={value} onChange={onChange}
         placeholder={placeholder ?? '••••••••'}
+        autoComplete={name === 'confirmPassword' ? 'new-password' : 'new-password'}
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-form-type="other"
         required minLength={6}
-        className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+        className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
       />
       <button
         type="button"
@@ -62,7 +66,7 @@ function StrengthBar({ password }: { password: string }) {
 }
 
 /* ─── Field wrapper ───────────────────────────────────── */
-const inputCls = 'w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
+const inputCls = 'w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition'
 
 function Field({ label, icon: Icon, children }: {
   label: string; icon: React.ElementType; children: React.ReactNode
@@ -121,10 +125,10 @@ export default function RegisterPage() {
         style={{ background: 'linear-gradient(160deg, #0F172A 0%, #1E293B 100%)' }}
       >
         {/* Background glows */}
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full opacity-10 pointer-events-none"
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full opacity-15 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse, #3B82F6, transparent)' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 rounded-full opacity-10 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, #7C3AED, transparent)' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 rounded-full opacity-15 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse, #60A5FA, transparent)' }} />
 
         <div className="relative z-10 text-center max-w-xs">
           <div className="w-16 h-16 rounded-2xl overflow-hidden ring-1 ring-white/10 mx-auto mb-6">
@@ -168,7 +172,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-7">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Create your account</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-blue-700">Create your account</h1>
             <p className="text-sm text-gray-400 mt-1">Start your exam preparation journey today</p>
           </div>
 
@@ -191,6 +195,10 @@ export default function RegisterPage() {
                     id="firstName" name="firstName" type="text"
                     placeholder="Jane"
                     value={formData.firstName} onChange={set}
+                    autoComplete="given-name"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
                     required className={inputCls}
                   />
                 </div>
@@ -202,6 +210,10 @@ export default function RegisterPage() {
                     id="lastName" name="lastName" type="text"
                     placeholder="Doe"
                     value={formData.lastName} onChange={set}
+                    autoComplete="family-name"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
                     required className={inputCls}
                   />
                 </div>
@@ -216,6 +228,10 @@ export default function RegisterPage() {
                   id="email" name="email" type="email"
                   placeholder="you@example.com"
                   value={formData.email} onChange={set}
+                  autoComplete="email"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   required className={inputCls}
                 />
               </div>
@@ -229,6 +245,10 @@ export default function RegisterPage() {
                   id="phone" name="phone" type="tel"
                   placeholder="+237 6XX XXX XXX"
                   value={formData.phone} onChange={set}
+                  autoComplete="tel"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   required className={inputCls}
                 />
               </div>
@@ -264,7 +284,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 transition-colors mt-2"
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors mt-2"
             >
               {isLoading
                 ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating account…</>
@@ -274,7 +294,7 @@ export default function RegisterPage() {
 
           <p className="text-sm text-center text-gray-500 mt-6">
             Already have an account?{' '}
-            <Link href="/login" className="text-gray-900 font-semibold hover:underline underline-offset-2">
+            <Link href="/login" className="text-blue-600 font-semibold hover:underline underline-offset-2">
               Sign in
             </Link>
           </p>

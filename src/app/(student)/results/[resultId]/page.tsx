@@ -109,7 +109,7 @@ export default function ResultsPage() {
       <StudentShell title="Results">
         <div className="flex items-center justify-center h-60">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+            <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
             <p className="text-sm text-gray-400">Loading results…</p>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function ResultsPage() {
       headerAction={
         <Link
           href="/exams"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-700 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
         >
           <Zap className="w-3.5 h-3.5" /> New exam
         </Link>
@@ -172,7 +172,7 @@ export default function ResultsPage() {
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-0.5">
               {result.examType}
             </p>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 leading-tight">{result.subject}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-blue-700 leading-tight">{result.subject}</h1>
             <p className="text-xs text-gray-400 mt-0.5">{formatDate(result.completedAt)}</p>
           </div>
         </div>
@@ -375,7 +375,7 @@ export default function ResultsPage() {
           </Link>
           <Link
             href="/exams"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             <Zap className="w-4 h-4" /> Take another exam
           </Link>

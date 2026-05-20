@@ -138,13 +138,13 @@ export function MarketingLayout({
                     <p className="text-gray-400 mb-6 max-w-md">
                       Empowering students in Cameroon to achieve exam success through innovative technology and comprehensive preparation tools.
                     </p>
-                    <div className="flex gap-4">
+                    {/* <div className="flex gap-4">
                       {['facebook', 'twitter', 'linkedin', 'instagram'].map((social) => (
                         <a key={social} href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
                           <span className="text-gray-400 text-sm capitalize">{social[0]}</span>
                         </a>
                       ))}
-                    </div>
+                    </div> */}
                   </div>
                   
                   <div>

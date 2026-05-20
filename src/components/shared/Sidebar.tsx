@@ -77,7 +77,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
                 className={cn(
                   'w-full px-4 py-3 rounded-lg transition-colors flex items-center gap-3',
                   isActive(item.href)
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-blue-700 text-white'
                     : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                 )}
               >

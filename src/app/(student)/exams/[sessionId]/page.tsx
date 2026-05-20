@@ -78,7 +78,7 @@ function SubmitConfirm({
           <button
             onClick={onConfirm}
             disabled={isSubmitting}
-            className="flex-1 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50 transition-colors inline-flex items-center justify-center gap-1.5"
+            className="flex-1 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors inline-flex items-center justify-center gap-1.5"
           >
             {isSubmitting
               ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

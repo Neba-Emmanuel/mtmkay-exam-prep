@@ -205,7 +205,7 @@ export default function AdminAnalyticsPage() {
         {/* Header */}
         <div className="border-b border-gray-100 pb-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Admin Console</p>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Analytics</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-blue-700">Analytics</h1>
           <p className="text-sm text-gray-400 mt-1">Platform activity overview · last 30 days</p>
         </div>
 
@@ -213,7 +213,7 @@ export default function AdminAnalyticsPage() {
         {isLoading ? (
           <div className="flex items-center justify-center h-60">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+              <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
               <p className="text-sm text-gray-400">Loading analytics…</p>
             </div>
           </div>

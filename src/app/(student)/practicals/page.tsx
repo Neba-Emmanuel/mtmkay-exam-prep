@@ -20,7 +20,7 @@ interface Practical {
 const SUBJECTS = ['All', 'Physics', 'Chemistry', 'Biology']
 
 const SUBJECT_STYLE: Record<string, { bg: string; text: string; strip: string }> = {
-  Physics:   { bg: '#EFF6FF', text: '#1D4ED8', strip: '#3B82F6' },
+  Physics:   { bg: '#EFF6FF', text: '#080a11', strip: '#040c18' },
   Chemistry: { bg: '#F0FDF4', text: '#15803D', strip: '#22C55E' },
   Biology:   { bg: '#FDF4FF', text: '#7E22CE', strip: '#A855F7' },
 }
@@ -60,7 +60,7 @@ export default function PracticalsPage() {
         {/* Header */}
         <div className="border-b border-gray-100 pb-5">
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Science</p>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Practicals</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-blue-700">Practicals</h1>
           <p className="text-sm text-gray-400 mt-1">
             Step-by-step lab experiments for Physics, Chemistry, and Biology.
           </p>
@@ -97,7 +97,7 @@ export default function PracticalsPage() {
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all"
                   style={active
                     ? s === 'All'
-                      ? { background: '#111827', color: 'white', borderColor: 'transparent' }
+                      ? { background: '#2061eb', color: 'white', borderColor: 'transparent' }
                       : { background: ss.strip, color: 'white', borderColor: 'transparent' }
                     : { background: 'white', color: '#6B7280', borderColor: '#E5E7EB' }}
                 >
@@ -111,7 +111,7 @@ export default function PracticalsPage() {
           <div className="relative sm:ml-auto max-w-xs w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <input
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               placeholder="Search practicals…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -123,7 +123,7 @@ export default function PracticalsPage() {
         {isLoading ? (
           <div className="flex items-center justify-center h-52">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+              <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
               <p className="text-sm text-gray-400">Loading practicals…</p>
             </div>
           </div>
@@ -152,14 +152,13 @@ export default function PracticalsPage() {
                   className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-150 hover:-translate-y-0.5 overflow-hidden flex flex-col"
                 >
                   {/* Top accent strip */}
-                  <div className="h-1 w-full shrink-0" style={{ background: ss.strip }} />
+                  <div className="h-1 w-full shrink-0 bg-blue-600" />
 
                   <div className="p-5 flex flex-col flex-1">
                     {/* Icon + premium badge */}
                     <div className="flex items-start justify-between mb-3">
                       <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ background: ss.bg }}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-100"
                       >
                         <Beaker className="w-4 h-4" style={{ color: ss.text }} />
                       </div>
@@ -198,8 +197,7 @@ export default function PracticalsPage() {
                     <div className="mt-auto">
                       <Link href={`/practicals/${p.id}`}>
                         <button
-                          className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-colors"
-                          style={{ background: ss.bg, color: ss.text }}
+                          className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-colors bg-blue-600 text-white"
                         >
                           View practical
                           <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

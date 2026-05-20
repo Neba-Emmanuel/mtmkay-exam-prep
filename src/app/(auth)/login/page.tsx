@@ -22,8 +22,12 @@ function PasswordInput({ value, onChange }: {
         type={show ? 'text' : 'password'}
         placeholder="••••••••"
         value={value} onChange={onChange}
+        autoComplete="current-password"
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-form-type="other"
         required
-        className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+        className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
       />
       <button
         type="button"
@@ -37,7 +41,7 @@ function PasswordInput({ value, onChange }: {
   )
 }
 
-const inputCls = 'w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
+const inputCls = 'w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition'
 
 /* ─── Main Page ──────────────────────────────────────── */
 export default function LoginPage() {
@@ -77,10 +81,10 @@ export default function LoginPage() {
         style={{ background: 'linear-gradient(160deg, #0F172A 0%, #1E293B 100%)' }}
       >
         {/* Background glows */}
-        <div className="absolute top-1/3 left-1/3 w-72 h-72 rounded-full opacity-10 pointer-events-none"
+        <div className="absolute top-1/3 left-1/3 w-72 h-72 rounded-full opacity-15 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse, #3B82F6, transparent)' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-52 h-52 rounded-full opacity-10 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, #7C3AED, transparent)' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-52 h-52 rounded-full opacity-15 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse, #60A5FA, transparent)' }} />
 
         <div className="relative z-10 text-center max-w-xs">
           {/* Logo */}
@@ -133,7 +137,7 @@ export default function LoginPage() {
 
           {/* Heading */}
           <div className="mb-7">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Sign in</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-blue-700">Sign in</h1>
             <p className="text-sm text-gray-400 mt-1">Continue your exam preparation</p>
           </div>
 
@@ -156,6 +160,10 @@ export default function LoginPage() {
                   id="email" name="email" type="email"
                   placeholder="you@example.com"
                   value={formData.email} onChange={set}
+                  autoComplete="email"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   required className={inputCls}
                 />
               </div>
@@ -167,7 +175,7 @@ export default function LoginPage() {
                 <label className="text-xs font-medium text-gray-500">Password</label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+                  className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -178,7 +186,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 transition-colors mt-1"
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors mt-1"
             >
               {isLoading
                 ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Signing in…</>
@@ -188,7 +196,7 @@ export default function LoginPage() {
 
           <p className="text-sm text-center text-gray-500 mt-6">
             Don't have an account?{' '}
-            <Link href="/register" className="text-gray-900 font-semibold hover:underline underline-offset-2">
+            <Link href="/register" className="text-blue-600 font-semibold hover:underline underline-offset-2">
               Sign up free
             </Link>
           </p>

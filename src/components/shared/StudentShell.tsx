@@ -70,8 +70,8 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
 function Avatar({ firstName, lastName }: { firstName: string; lastName: string }) {
   const initials = `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase()
   return (
-    <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-400/20 flex items-center justify-center shrink-0">
-      <span className="text-xs font-semibold text-indigo-300">{initials}</span>
+    <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/20 flex items-center justify-center shrink-0">
+      <span className="text-xs font-semibold text-blue-300">{initials}</span>
     </div>
   )
 }
@@ -227,7 +227,7 @@ export function StudentShell({
                 <ChevronRight className="w-3 h-3" />
                 <span className="text-gray-600 font-medium">{currentPage}</span>
               </div>
-              <h1 className="text-base font-bold text-gray-900 leading-tight truncate">{title}</h1>
+              <h1 className="text-base font-bold text-blue-700 leading-tight truncate">{title}</h1>
             </div>
 
             {/* Header action slot */}

@@ -79,7 +79,7 @@ function ExamTypeForm({ initial = EMPTY_FORM, onSubmit, onCancel, loading, error
   error: string
 }) {
   const [form, setForm] = useState(initial)
-  const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
+  const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition'
 
   return (
     <div className="space-y-4">
@@ -111,7 +111,7 @@ function ExamTypeForm({ initial = EMPTY_FORM, onSubmit, onCancel, loading, error
         <button
           onClick={() => onSubmit(form)}
           disabled={loading || !form.name.trim()}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50 transition-colors"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           {loading
             ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -236,14 +236,14 @@ export default function AdminExamTypesPage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-100 pb-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Admin Console</p>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Exam Types</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-blue-700">Exam Types</h1>
             <p className="text-sm text-gray-400 mt-1">
               {examTypes.length} exam type{examTypes.length !== 1 ? 's' : ''} total
             </p>
           </div>
           <button
             onClick={() => { setModalError(''); setAddOpen(true) }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors self-start sm:self-auto"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" /> Add exam type
           </button>
@@ -253,7 +253,7 @@ export default function AdminExamTypesPage() {
         {isLoading ? (
           <div className="flex items-center justify-center h-52">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+              <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
               <p className="text-sm text-gray-400">Loading exam types…</p>
             </div>
           </div>

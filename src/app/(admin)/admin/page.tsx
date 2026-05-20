@@ -49,9 +49,9 @@ const quickLinks = [
     icon: Users,
     addHref: '/admin/users?mode=add',
     addLabel: 'Add User',
-    accent: '#3B5BDB',
-    bg: '#EDF2FF',
-    dot: '#748FFC',
+    accent: '#2563EB',
+    bg: '#EFF6FF',
+    dot: '#60A5FA',
   },
   {
     href: '/admin/questions',
@@ -107,7 +107,7 @@ const quickLinks = [
 ]
 
 const colorMap: Record<string, { text: string; bg: string; ring: string }> = {
-  blue:    { text: '#1C7ED6', bg: '#E7F5FF', ring: '#74C0FC' },
+  blue:    { text: '#2563EB', bg: '#EFF6FF', ring: '#93C5FD' },
   violet:  { text: '#7048E8', bg: '#F3F0FF', ring: '#B197FC' },
   emerald: { text: '#087F5B', bg: '#E6FCF5', ring: '#63E6BE' },
   amber:   { text: '#E67700', bg: '#FFF9DB', ring: '#FFD43B' },
@@ -138,7 +138,7 @@ export default function AdminDashboardPage() {
       <AdminShell title="Overview" description="">
         <div className="flex items-center justify-center h-80">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+            <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
             <p className="text-sm text-gray-400 tracking-wide">Loading platform data…</p>
           </div>
         </div>
@@ -156,11 +156,11 @@ export default function AdminDashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-100 pb-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Admin Console</p>
-            <h1 className="text-3xl font-bold tracking-tight text-blue-600">Platform Overview</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-blue-700">Platform Overview</h1>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/admin/analytics">
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
+              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-700 text-white text-sm font-medium hover:bg-blue-800 transition-colors">
                 <BarChart3 className="w-4 h-4" />
                 Analytics
               </button>

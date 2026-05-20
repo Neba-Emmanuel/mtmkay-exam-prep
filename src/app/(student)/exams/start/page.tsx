@@ -105,7 +105,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
         <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2">{message}</p>
         <button
           onClick={onRetry}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
         >
           Go back to exams
         </button>
@@ -155,7 +155,7 @@ export default function ExamStartPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+          <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
         </div>
       }
     >

@@ -130,7 +130,7 @@ export default function ResultsListPage() {
       headerAction={
         <Link
           href="/exams"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-700 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
         >
           <Zap className="w-3.5 h-3.5" /> Take exam
         </Link>
@@ -141,7 +141,7 @@ export default function ResultsListPage() {
         {/* Header */}
         <div className="border-b border-gray-100 pb-5">
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">History</p>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Results</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-blue-700">Results</h1>
           <p className="text-sm text-gray-400 mt-1">
             {results.length} exam{results.length !== 1 ? 's' : ''} completed
           </p>
@@ -151,7 +151,7 @@ export default function ResultsListPage() {
         {isLoading ? (
           <div className="flex items-center justify-center h-52">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+              <div className="w-9 h-9 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
               <p className="text-sm text-gray-400">Loading results…</p>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function ResultsListPage() {
             <p className="text-sm font-medium">No exam results yet</p>
             <Link
               href="/exams"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
             >
               <Zap className="w-4 h-4" /> Start your first exam
             </Link>
@@ -181,7 +181,7 @@ export default function ResultsListPage() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 <input
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   placeholder="Search by subject or exam type…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -189,7 +189,7 @@ export default function ResultsListPage() {
               </div>
               {examTypes.length > 1 && (
                 <select
-                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white transition"
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition"
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
                 >

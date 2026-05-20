@@ -179,7 +179,7 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
     }
   }
 
-  const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
+  const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition'
 
   const filledOptions = form.options.filter((o) => o.text.trim()).length
   const hasCorrect = form.options.some((o) => o.isCorrect && o.text.trim())
@@ -257,7 +257,7 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
                 className={`flex-1 rounded-lg border px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition ${
                   opt.isCorrect
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-900 focus:ring-emerald-300'
-                    : 'border-gray-200 text-gray-900 focus:ring-gray-900'
+                    : 'border-gray-200 text-gray-900 focus:ring-blue-500'
                 }`}
                 value={opt.text}
                 onChange={(e) => setOption(i, 'text', e.target.value)}
@@ -319,7 +319,7 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
         <button
           onClick={() => onSubmit(form)}
           disabled={loading || !canSubmit}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50 transition-colors"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           {loading
             ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -502,7 +502,7 @@ export default function AdminQuestionsPage() {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <input
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               placeholder="Search questions…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -510,7 +510,7 @@ export default function AdminQuestionsPage() {
           </div>
           {subjectOptions.length > 0 && (
             <select
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition bg-white"
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
               value={filterSubject}
               onChange={(e) => setFilterSubject(e.target.value)}
             >
@@ -519,7 +519,7 @@ export default function AdminQuestionsPage() {
             </select>
           )}
           <select
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition bg-white"
+            className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
             value={filterDiff}
             onChange={(e) => setFilterDiff(e.target.value)}
           >
@@ -532,7 +532,7 @@ export default function AdminQuestionsPage() {
         {isLoading ? (
           <div className="flex items-center justify-center h-60">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin" />
+              <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
               <p className="text-sm text-gray-400">Loading questions…</p>
             </div>
           </div>
