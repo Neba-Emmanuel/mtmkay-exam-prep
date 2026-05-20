@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { clearAuthSession } from '@/lib/authSession'
 import {
   Menu, X, LayoutDashboard, Users, FileQuestion,
   BookOpen, Beaker, CreditCard, BarChart3, LogOut, ChevronRight, Hash,
@@ -66,15 +67,13 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
 
-  useEffect(() => { setMenuOpen(false) }, [pathname])
-
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
   const handleLogout = () => {
-    localStorage.clear()
+    clearAuthSession()
     window.location.href = '/login'
   }
 

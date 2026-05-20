@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { clearAuthSession, updateAccessToken } from '@/lib/authSession'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
@@ -41,14 +42,15 @@ api.interceptors.response.use(
           })
 
           const { accessToken } = response.data
-          localStorage.setItem('accessToken', accessToken)
+          const userStr = localStorage.getItem('user')
+          const role = userStr ? JSON.parse(userStr)?.role : undefined
+          updateAccessToken(accessToken, role)
 
           originalRequest.headers.Authorization = `Bearer ${accessToken}`
           return api(originalRequest)
         }
       } catch (refreshError) {
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
+        clearAuthSession()
         window.location.href = '/login'
         return Promise.reject(refreshError)
       }

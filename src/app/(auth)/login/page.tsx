@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import { getDashboardForRole, persistAuthSession } from '@/lib/authSession'
 import { useAuthStore } from '@/store/authStore'
 import { Eye, EyeOff, AlertCircle, Mail, Lock, BookOpen, TrendingUp, Beaker, BarChart3 } from 'lucide-react'
 
@@ -60,13 +61,10 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', formData)
       const { user, accessToken, refreshToken } = data
-      const normalizedUser = { ...user, role: String(user.role || 'student').toLowerCase() }
-      localStorage.setItem('accessToken', accessToken)
-      localStorage.setItem('refreshToken', refreshToken)
-      localStorage.setItem('user', JSON.stringify(normalizedUser))
+      const normalizedUser = persistAuthSession(user, accessToken, refreshToken)
       authLogin(normalizedUser, accessToken, refreshToken)
-      const target = ['admin', 'school_admin', 'super_admin'].includes(normalizedUser.role) ? '/admin' : '/dashboard'
-      router.push(target)
+      router.replace(getDashboardForRole(normalizedUser.role))
+      router.refresh()
     } catch (err: unknown) {
       setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Invalid email or password')
     } finally { setIsLoading(false) }
@@ -130,7 +128,7 @@ export default function LoginPage() {
               <Image src="/mtmkay_logo.png" alt="MTMKay" width={40} height={40} className="w-full h-full object-cover" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900 leading-none">MTMKay</p>
+              <p className="text-sm font-bold text-blue-600 leading-none">MTMKay</p>
               <p className="text-xs text-gray-400">Exam Prep</p>
             </div>
           </div>
@@ -195,7 +193,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-sm text-center text-gray-500 mt-6">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/register" className="text-blue-600 font-semibold hover:underline underline-offset-2">
               Sign up free
             </Link>

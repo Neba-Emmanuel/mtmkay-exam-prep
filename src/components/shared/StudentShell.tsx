@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { clearAuthSession } from '@/lib/authSession'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
 import {
@@ -90,8 +91,6 @@ export function StudentShell({
   const user = userProp ?? storeUser
   const [menuOpen, setMenuOpen] = useState(false)
 
-  useEffect(() => { setMenuOpen(false) }, [pathname])
-
   useEffect(() => {
     if (user?.role && user.role !== 'student') router.replace('/admin')
   }, [user, router])
@@ -103,10 +102,8 @@ export function StudentShell({
 
   const handleLogout = async () => {
     try { await api.post('/auth/logout') } catch {}
+    clearAuthSession()
     logout()
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('user')
     router.push('/login')
   }
 
