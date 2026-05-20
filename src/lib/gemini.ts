@@ -50,6 +50,24 @@ async function callGemini(prompt: string, maxToken = 2048): Promise<string> {
   throw new Error('No text in Gemini response')
 }
 
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  const apiError = error as {
+    response?: { data?: { message?: unknown; error?: unknown } }
+    message?: unknown
+  }
+
+  const responseMessage = apiError.response?.data?.message ?? apiError.response?.data?.error
+  if (typeof responseMessage === 'string' && responseMessage.trim()) {
+    return responseMessage
+  }
+
+  if (typeof apiError.message === 'string' && apiError.message.trim()) {
+    return apiError.message
+  }
+
+  return fallback
+}
+
 export async function generatePractical(
   subject: string,
   topic: string
@@ -121,6 +139,8 @@ export async function generateLabImage(
     title,
     subject,
     stepInstruction,
+  }).catch((error: unknown) => {
+    throw new Error(getApiErrorMessage(error, 'Image generation failed'))
   })
 
   const imageUrl = response.data?.imageUrl

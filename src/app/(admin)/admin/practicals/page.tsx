@@ -182,11 +182,20 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
 
       setImageProgress(`Generating ${result.steps.length + 1} illustrations…`)
 
+      const imageErrors: string[] = []
+      const generateImageOrNull = (
+        title: string,
+        subjectName: string,
+        stepInstruction?: string
+      ) => generateLabImage(title, subjectName, stepInstruction).catch((error: unknown) => {
+        const message = (error as Error)?.message
+        if (message) imageErrors.push(message)
+        return null
+      })
+
       const [practicalImage, ...stepImages] = await Promise.all([
-        generateLabImage(result.title, subject.name).catch(() => null),
-        ...result.steps.map((s) =>
-          generateLabImage(result.title, subject.name, s.instruction).catch(() => null)
-        ),
+        generateImageOrNull(result.title, subject.name),
+        ...result.steps.map((s) => generateImageOrNull(result.title, subject.name, s.instruction)),
       ])
 
       setForm((p) => ({
@@ -211,6 +220,9 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
       setAiGenerated(true)
       setTopic('')
       setImageProgress('')
+      if (!practicalImage && stepImages.every((image) => !image) && imageErrors.length > 0) {
+        setAiError(`Practical generated without illustrations: ${imageErrors[0]}`)
+      }
     } catch (e: unknown) {
       setAiError((e as Error)?.message ?? 'Failed to generate practical')
       setImageProgress('')
