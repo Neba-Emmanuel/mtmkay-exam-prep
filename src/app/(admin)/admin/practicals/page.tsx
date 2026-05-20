@@ -639,7 +639,7 @@ export default function AdminPracticalsPage() {
     if (!editPractical) return
     setModalLoading(true); setModalError('')
     try {
-      const { data } = await api.patch(`/admin/practicals/${editPractical.id}`, form)
+      const { data } = await api.put(`/admin/practicals/${editPractical.id}`, form)
       setPracticals((p) => p.map((x) => x.id === editPractical.id ? data : x))
       setEditPractical(null)
     } catch (e: unknown) {
