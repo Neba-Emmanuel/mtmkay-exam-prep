@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { AdminShell } from '@/components/shared/AdminShell'
 import api from '@/lib/api'
-import { generatePractical } from '@/lib/gemini'
+import { generatePractical, generateLabImage } from '@/lib/gemini'
 import {
   Beaker, Plus, Search, Pencil, Trash2, X, Check,
   ChevronUp, ChevronDown, ChevronsUpDown, Minus,
@@ -180,7 +180,14 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
       setImageProgress('Generating practical content…')
       const result = await generatePractical(subject.name, topic)
 
-      setImageProgress(`Generating ${result.steps.length} step illustrations…`)
+      setImageProgress(`Generating ${result.steps.length + 1} illustrations…`)
+
+      const [practicalImage, ...stepImages] = await Promise.all([
+        generateLabImage(result.title, subject.name).catch(() => null),
+        ...result.steps.map((s) =>
+          generateLabImage(result.title, subject.name, s.instruction).catch(() => null)
+        ),
+      ])
 
       setForm((p) => ({
         ...p,
@@ -190,14 +197,14 @@ function PracticalForm({ initial, subjects, onSubmit, onCancel, isEdit, loading,
         apparatus: result.apparatus,
         safety: result.safety,
         aiGenerated: true,
-        imageUrl: null,
+        imageUrl: practicalImage,
         steps: result.steps.map((s, idx) => ({
           order: idx + 1,
           instruction: s.instruction,
           observation: s.observation ?? null,
           calculation: s.calculation ?? null,
           commonMistakes: s.commonMistakes ?? null,
-          imageUrl: s.imageUrl ?? null,
+          imageUrl: stepImages[idx] ?? null,
         })),
       }))
 
