@@ -176,7 +176,7 @@ export function MarketingLayout({
                 
                 <div className="pt-8 border-t border-gray-800 text-center">
                   <p className="text-gray-500 text-sm">
-                    © {new Date().getFullYear()} MTMKay Exam Prep. All rights reserved.
+                    © {new Date().getFullYear()} <a href='https://mtmkay.com' target='_blank' className="hover:text-blue-400 transition-colors">MTMKay</a>. All rights reserved.
                   </p>
                 </div>
               </div>

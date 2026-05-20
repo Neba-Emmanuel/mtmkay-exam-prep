@@ -77,16 +77,13 @@ export function ContactForm() {
           <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1.5">
             Subject
           </label>
-          <select
+          <input
             id="subject"
             name="subject"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
-          >
-            <option>General inquiry</option>
-            <option>Technical support</option>
-            <option>Billing & subscriptions</option>
-            <option>School partnership</option>
-          </select>
+            required
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+            placeholder="What is this regarding?"
+          />
         </div>
         <div>
           <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1.5">

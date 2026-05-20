@@ -373,10 +373,10 @@ export default function Home() {
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              href="/pricing"
+              href="/contact"
               className="inline-flex items-center justify-center px-10 py-4 text-lg font-semibold text-white bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl hover:bg-white/30 transition-all duration-300"
             >
-              View Pricing
+              Contact Us
             </Link>
           </div>
           <p className="text-sm text-white/80 mt-6">
@@ -438,7 +438,7 @@ export default function Home() {
           
           <div className="pt-8 border-t border-gray-800 text-center">
             <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} MTMKay Exam Prep. All rights reserved.
+              © {new Date().getFullYear()} <a href='https://mtmkay.com' target='_blank' className="text-blue-500 hover:text-blue-400 transition-colors">MTMKay</a>. All rights reserved.
             </p>
           </div>
         </div>
