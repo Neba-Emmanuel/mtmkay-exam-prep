@@ -248,14 +248,88 @@ export default function Home() {
                     </div>
                     <h3 className="font-bold text-gray-900 text-lg mb-2">{category.name}</h3>
                     <p className="text-sm text-gray-500 mb-4">{category.subjects} subjects available</p>
-                    <span className={`inline-flex items-center gap-1 text-sm font-medium bg-gradient-to-r ${category.color} bg-clip-text text-transparent`}>
+                    {/* <span className={`inline-flex items-center gap-1 text-sm font-medium bg-gradient-to-r ${category.color} bg-clip-text text-transparent`}>
                       Explore
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </span>
+                    </span> */}
                   </div>
                 </Link>
               )
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Subject Illustrations Section */}
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-blue-50 rounded-full px-4 py-2 mb-4">
+              <BookOpen className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-600">Subject Support</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Learn Across Arts and Sciences
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Build confidence with guided lessons, practical visuals, and exam-focused revision for the subjects that matter most.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-8 items-stretch">
+            {[
+              {
+                title: 'Arts Subjects',
+                description: 'Study literature, history, economics, geography, and language topics with structured notes and practice questions that sharpen recall and essay confidence.',
+                image: '/images/arts_subjects_illustration.svg',
+                accent: 'from-purple-500 to-pink-500',
+                bg: 'from-purple-50 to-white',
+                subjects: ['Literature', 'History', 'Economics', 'Geography'],
+              },
+              {
+                title: 'Science Practicals',
+                description: 'Explore biology, chemistry, and physics experiments through clear lab diagrams, safety notes, apparatus lists, observations, and step-by-step procedures.',
+                image: '/images/science_lab_illustration.svg',
+                accent: 'from-blue-500 to-cyan-500',
+                bg: 'from-blue-50 to-white',
+                subjects: ['Biology', 'Chemistry', 'Physics', 'Lab Skills'],
+              },
+            ].map((area) => (
+              <div key={area.title} className={`bg-gradient-to-br ${area.bg} rounded-2xl border border-gray-100 shadow-sm overflow-hidden`}>
+                <div className={`h-1.5 bg-gradient-to-r ${area.accent}`} />
+                <div className="p-6 sm:p-8">
+                  <div className="aspect-[16/10] mb-6 rounded-xl bg-white border border-gray-100 overflow-hidden">
+                    <img
+                      src={area.image}
+                      alt={`${area.title} illustration`}
+                      className="w-full h-full object-contain p-4"
+                    />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{area.title}</h3>
+                  <p className="text-gray-600 leading-relaxed mb-5">{area.description}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {area.subjects.map((subject) => (
+                      <span key={subject} className="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-medium text-gray-600 border border-gray-100">
+                        {subject}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 grid md:grid-cols-3 gap-4">
+            {[
+              'Subject guides built for Cameroon exam pathways',
+              'Visual explanations for practical and theory topics',
+              'Practice questions that turn revision into routine',
+            ].map((text) => (
+              <div key={text} className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 border border-gray-100 shadow-sm">
+                <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                <p className="text-sm font-medium text-gray-600">{text}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -289,68 +363,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-24 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-blue-50 rounded-full px-4 py-2 mb-4">
-              <Users className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-600">Success Stories</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              What Our Students Say
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Join thousands of successful students who achieved their goals with MTMKay.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: 'Sarah M.',
-                role: 'GCE A/L Candidate',
-                content: 'MTMKay transformed my exam preparation. The CBT practice was exactly like the real exam, and the analytics helped me focus on my weak areas.',
-                rating: 5,
-                image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop'
-              },
-              {
-                name: 'John D.',
-                role: 'HND Engineering Student',
-                content: 'The visual practicals were a game-changer. I could understand complex experiments without needing a physical lab. Highly recommended!',
-                rating: 5,
-                image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop'
-              },
-              {
-                name: 'Marie K.',
-                role: 'Concours Candidate',
-                content: 'I passed my concours on the first try thanks to MTMKay. The past questions and performance tracking gave me the confidence I needed.',
-                rating: 5,
-                image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop'
-              },
-            ].map((testimonial, idx) => (
-              <div key={idx} className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300">
-                <div className="flex items-center gap-4 mb-6">
-                  <img src={testimonial.image} alt={testimonial.name} className="w-12 h-12 rounded-full object-cover" />
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
-                    <p className="text-sm text-gray-500">{testimonial.role}</p>
-                  </div>
-                </div>
-                <div className="flex gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-gray-600 leading-relaxed">&ldquo;{testimonial.content}&rdquo;</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section - Fixed Gradient with Visible Buttons */}
       <section className="relative py-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
@@ -379,9 +391,7 @@ export default function Home() {
               Contact Us
             </Link>
           </div>
-          <p className="text-sm text-white/80 mt-6">
-            No credit card required. Free trial includes full access to all features.
-          </p>
+         
         </div>
       </section>
 
@@ -412,7 +422,7 @@ export default function Home() {
             <div>
               <h4 className="text-white font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2">
-                {['About', 'Contact', 'Blog', 'Careers'].map((link) => (
+                {['About', 'Contact'].map((link) => (
                   <li key={link}>
                     <Link href={`/${link.toLowerCase().replace(' ', '-')}`} className="text-gray-400 hover:text-white transition-colors">
                       {link}
@@ -425,7 +435,7 @@ export default function Home() {
             <div>
               <h4 className="text-white font-semibold mb-4">Legal</h4>
               <ul className="space-y-2">
-                {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Refund Policy'].map((link) => (
+                {['Privacy Policy', 'Terms of Service'].map((link) => (
                   <li key={link}>
                     <Link href={`/${link.toLowerCase().replace(/ /g, '-')}`} className="text-gray-400 hover:text-white transition-colors">
                       {link}

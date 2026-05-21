@@ -39,8 +39,8 @@ export function MarketingLayout({
               className="h-10 w-10 rounded-lg object-contain transition-transform group-hover:scale-105" 
             />
             <div>
-              <p className="text-sm font-bold text-blue-950">MTMKay</p>
-              <p className="text-xs text-blue-400">Exam Prep</p>
+              <p className="text-sm font-bold text-blue-600">MTMKay</p>
+              <p className="text-xs text-gray-600">Exam Prep</p>
             </div>
           </Link>
 
@@ -150,7 +150,7 @@ export function MarketingLayout({
                   <div>
                     <h4 className="text-white font-semibold mb-4">Quick Links</h4>
                     <ul className="space-y-2">
-                      {['About', 'Contact', 'Blog', 'Careers'].map((link) => (
+                      {['About', 'Contact'].map((link) => (
                         <li key={link}>
                           <Link href={`/${link.toLowerCase().replace(' ', '-')}`} className="text-gray-400 hover:text-white transition-colors">
                             {link}
@@ -163,7 +163,7 @@ export function MarketingLayout({
                   <div>
                     <h4 className="text-white font-semibold mb-4">Legal</h4>
                     <ul className="space-y-2">
-                      {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Refund Policy'].map((link) => (
+                      {['Privacy Policy', 'Terms of Service'].map((link) => (
                         <li key={link}>
                           <Link href={`/${link.toLowerCase().replace(/ /g, '-')}`} className="text-gray-400 hover:text-white transition-colors">
                             {link}
