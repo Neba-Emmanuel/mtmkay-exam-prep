@@ -8,7 +8,7 @@ import { formatTime } from '@/lib/utils'
 import {
   ChevronLeft, ChevronRight, Flag, Send,
   Clock, CheckCircle2, Circle, BookmarkCheck,
-  AlertTriangle,
+  AlertTriangle, Image as ImageIcon, ScrollText,
 } from 'lucide-react'
 
 /* ─── Types ──────────────────────────────────────────── */
@@ -20,6 +20,9 @@ interface Option {
 interface Question {
   id: string
   text: string
+  passageTitle?: string | null
+  passageText?: string | null
+  imageUrls?: string[]
   options: Option[]
 }
 
@@ -272,6 +275,36 @@ export default function ExamSessionPage() {
             <p className="text-base sm:text-lg text-blue-950 leading-relaxed font-medium">
               {currentQuestion?.text}
             </p>
+
+            {currentQuestion?.passageText && (
+              <div className="mt-5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
+                <div className="flex items-center gap-2 mb-2 text-indigo-700">
+                  <ScrollText className="w-4 h-4" />
+                  <p className="text-sm font-semibold">{currentQuestion.passageTitle || 'Reading passage'}</p>
+                </div>
+                <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">
+                  {currentQuestion.passageText}
+                </p>
+              </div>
+            )}
+
+            {currentQuestion?.imageUrls && currentQuestion.imageUrls.length > 0 && (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {currentQuestion.imageUrls.map((url, i) => (
+                  <figure key={`${url}-${i}`} className="rounded-xl border border-blue-100 bg-blue-50/40 overflow-hidden">
+                    <img
+                      src={url}
+                      alt={`Question ${currentQuestionIndex + 1} image ${i + 1}`}
+                      className="w-full max-h-80 object-contain bg-white"
+                    />
+                    <figcaption className="flex items-center gap-1.5 px-3 py-2 text-xs text-blue-600">
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      Image {i + 1}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Options */}

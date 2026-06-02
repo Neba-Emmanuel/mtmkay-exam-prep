@@ -9,13 +9,16 @@ import { formatDate, calculatePercentage, getGradeLabel } from '@/lib/utils'
 import {
   CheckCircle2, XCircle, MinusCircle, Clock, Zap,
   ChevronDown, ChevronUp, BookOpen, TrendingUp,
-  ChevronLeft,
+  ChevronLeft, Image as ImageIcon, ScrollText,
 } from 'lucide-react'
 
 /* ─── Types ──────────────────────────────────────────── */
 interface QuestionResult {
   id: string
   text: string
+  passageTitle?: string | null
+  passageText?: string | null
+  imageUrls?: string[]
   options: Array<{ id: string; text: string }>
   selectedOption: string | null
   correctOption: string
@@ -310,6 +313,34 @@ export default function ResultsPage() {
                       <div className="px-5 pb-5 pl-16 space-y-3">
                         {/* Full question text */}
                         <p className="text-sm text-gray-700 font-medium">{q.text}</p>
+
+                        {q.passageText && (
+                          <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
+                            <div className="flex items-center gap-1.5 mb-2 text-indigo-700">
+                              <ScrollText className="w-4 h-4" />
+                              <p className="text-xs font-semibold">{q.passageTitle || 'Reading passage'}</p>
+                            </div>
+                            <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{q.passageText}</p>
+                          </div>
+                        )}
+
+                        {q.imageUrls && q.imageUrls.length > 0 && (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {q.imageUrls.map((url, imageIndex) => (
+                              <figure key={`${url}-${imageIndex}`} className="rounded-xl border border-blue-100 bg-blue-50/40 overflow-hidden">
+                                <img
+                                  src={url}
+                                  alt={`Question ${qIndex + 1} image ${imageIndex + 1}`}
+                                  className="w-full max-h-72 object-contain bg-white"
+                                />
+                                <figcaption className="flex items-center gap-1.5 px-3 py-2 text-xs text-blue-600">
+                                  <ImageIcon className="w-3.5 h-3.5" />
+                                  Image {imageIndex + 1}
+                                </figcaption>
+                              </figure>
+                            ))}
+                          </div>
+                        )}
 
                         {/* Options */}
                         <div className="space-y-2">

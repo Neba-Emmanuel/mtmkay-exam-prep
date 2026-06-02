@@ -7,6 +7,7 @@ import { generateExplanation } from '@/lib/gemini'
 import {
   FileQuestion, Plus, Search, Pencil, Trash2, X, Check,
   ChevronUp, ChevronDown, ChevronsUpDown, Minus, Sparkles,
+  Image as ImageIcon, ScrollText,
 } from 'lucide-react'
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -25,6 +26,10 @@ interface Option {
 interface Question {
   id: string
   text: string
+  passageTitle?: string | null
+  passageText?: string | null
+  imageUrls?: string[] | null
+  groupId?: string | null
   explanation?: string
   difficulty?: string
   subject?: Subject
@@ -45,17 +50,25 @@ const DIFF_STYLE: Record<string, { bg: string; text: string }> = {
 }
 
 const EMPTY_OPTION: Option = { text: '', isCorrect: false }
-const EMPTY_FORM = {
+const createQuestionDraft = () => ({
   text: '',
   explanation: '',
-  difficulty: 'medium',
-  subjectId: '',
   options: [
     { text: '', isCorrect: true },
     { text: '', isCorrect: false },
     { text: '', isCorrect: false },
     { text: '', isCorrect: false },
   ] as Option[],
+})
+const EMPTY_FORM = {
+  includePassage: false,
+  includeImages: false,
+  passageTitle: '',
+  passageText: '',
+  imageUrlsText: '',
+  difficulty: 'medium',
+  subjectId: '',
+  questions: [createQuestionDraft()],
 }
 
 /* ─── Helpers ────────────────────────────────────────── */
@@ -67,8 +80,11 @@ function truncate(s: string, n = 90) {
   return s.length > n ? `${s.slice(0, n)}…` : s
 }
 
-function prepareQuestionPayload(form: typeof EMPTY_FORM) {
-  const options = form.options
+type QuestionDraft = ReturnType<typeof createQuestionDraft>
+type QuestionFormData = typeof EMPTY_FORM
+
+function normalizeQuestionDraft(question: QuestionDraft) {
+  const options = question.options
     .map((option) => ({
       id: option.id,
       text: option.text.trim(),
@@ -76,15 +92,48 @@ function prepareQuestionPayload(form: typeof EMPTY_FORM) {
     }))
     .filter((option) => option.text.length > 0)
 
-  if (!form.subjectId) throw new Error('Select a subject')
+  if (!question.text.trim()) throw new Error('Enter a question')
   if (options.length < 2) throw new Error('Add at least two answer options')
   if (!options.some((option) => option.isCorrect)) throw new Error('Mark one answer option as correct')
 
   return {
-    ...form,
-    text: form.text.trim(),
-    explanation: form.explanation.trim(),
+    text: question.text.trim(),
+    explanation: question.explanation.trim(),
     options,
+  }
+}
+
+function prepareQuestionPayload(form: QuestionFormData) {
+  if (!form.subjectId) throw new Error('Select a subject')
+
+  const imageUrls = form.includeImages
+    ? form.imageUrlsText.split('\n').map((url) => url.trim()).filter(Boolean)
+    : []
+  const hasSharedContext = form.includePassage || form.includeImages
+  const questions = form.questions.map(normalizeQuestionDraft)
+
+  if (hasSharedContext && !form.passageText.trim() && imageUrls.length === 0) {
+    throw new Error('Add passage text or at least one image URL')
+  }
+
+  if (hasSharedContext) {
+    return {
+      subjectId: form.subjectId,
+      difficulty: form.difficulty,
+      passageTitle: form.includePassage ? form.passageTitle.trim() : '',
+      passageText: form.includePassage ? form.passageText.trim() : '',
+      imageUrls,
+      questions,
+    }
+  }
+
+  return {
+    subjectId: form.subjectId,
+    difficulty: form.difficulty,
+    ...questions[0],
+    passageTitle: form.passageTitle.trim(),
+    passageText: form.passageText.trim(),
+    imageUrls,
   }
 }
 
@@ -124,41 +173,79 @@ function Modal({ open, onClose, title, wide, children }: {
 
 /* ─── Question Form ──────────────────────────────────── */
 function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, error }: {
-  initial?: typeof EMPTY_FORM
+  initial?: QuestionFormData
   subjects: Subject[]
-  onSubmit: (data: typeof EMPTY_FORM) => Promise<void>
+  onSubmit: (data: QuestionFormData) => Promise<void>
   onCancel: () => void
   isEdit?: boolean
   loading: boolean
   error: string
 }) {
-  const [form, setForm] = useState<typeof EMPTY_FORM>(initial ?? EMPTY_FORM)
+  const [form, setForm] = useState<QuestionFormData>(initial ?? EMPTY_FORM)
   const [explainLoading, setExplainLoading] = useState(false)
   const [explainError, setExplainError] = useState('')
 
   const setField = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }))
 
-  const setOption = (i: number, k: keyof Option, v: unknown) =>
+  const setQuestion = (questionIndex: number, patch: Partial<QuestionDraft>) =>
     setForm((p) => ({
       ...p,
-      options: p.options.map((o, idx) =>
-        idx === i ? { ...o, [k]: v } : k === 'isCorrect' && v ? { ...o, isCorrect: false } : o
+      questions: p.questions.map((question, idx) =>
+        idx === questionIndex ? { ...question, ...patch } : question
       ),
     }))
 
-  const addOption = () =>
-    setForm((p) => ({ ...p, options: [...p.options, { ...EMPTY_OPTION }] }))
+  const setOption = (questionIndex: number, optionIndex: number, k: keyof Option, v: unknown) =>
+    setForm((p) => ({
+      ...p,
+      questions: p.questions.map((question, qIdx) =>
+        qIdx === questionIndex
+          ? {
+              ...question,
+              options: question.options.map((option, oIdx) =>
+                oIdx === optionIndex
+                  ? { ...option, [k]: v }
+                  : k === 'isCorrect' && v
+                    ? { ...option, isCorrect: false }
+                    : option
+              ),
+            }
+          : question
+      ),
+    }))
 
-  const removeOption = (i: number) =>
-    setForm((p) => ({ ...p, options: p.options.filter((_, idx) => idx !== i) }))
+  const addOption = (questionIndex: number) =>
+    setForm((p) => ({
+      ...p,
+      questions: p.questions.map((question, idx) =>
+        idx === questionIndex ? { ...question, options: [...question.options, { ...EMPTY_OPTION }] } : question
+      ),
+    }))
 
-  const handleAutoExplain = async () => {
+  const removeOption = (questionIndex: number, optionIndex: number) =>
+    setForm((p) => ({
+      ...p,
+      questions: p.questions.map((question, idx) =>
+        idx === questionIndex
+          ? { ...question, options: question.options.filter((_, oIdx) => oIdx !== optionIndex) }
+          : question
+      ),
+    }))
+
+  const addQuestion = () =>
+    setForm((p) => ({ ...p, questions: [...p.questions, createQuestionDraft()] }))
+
+  const removeQuestion = (questionIndex: number) =>
+    setForm((p) => ({ ...p, questions: p.questions.filter((_, idx) => idx !== questionIndex) }))
+
+  const handleAutoExplain = async (questionIndex: number) => {
     setExplainError('')
-    if (!form.text.trim()) {
+    const question = form.questions[questionIndex]
+    if (!question.text.trim()) {
       setExplainError('Enter a question first')
       return
     }
-    const correctOption = form.options.find(o => o.isCorrect)
+    const correctOption = question.options.find(o => o.isCorrect)
     if (!correctOption) {
       setExplainError('Mark the correct answer first')
       return
@@ -170,8 +257,8 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
 
     setExplainLoading(true)
     try {
-      const explanation = await generateExplanation(form.text, correctOption.text)
-      setField('explanation', explanation)
+      const explanation = await generateExplanation(question.text, correctOption.text)
+      setQuestion(questionIndex, { explanation })
     } catch (e: unknown) {
       setExplainError((e as Error)?.message ?? 'Failed to generate explanation')
     } finally {
@@ -181,26 +268,133 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
 
   const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition'
 
-  const filledOptions = form.options.filter((o) => o.text.trim()).length
-  const hasCorrect = form.options.some((o) => o.isCorrect && o.text.trim())
-  const canSubmit = form.text.trim() && form.subjectId && filledOptions >= 2 && hasCorrect
+  const hasSharedContext = form.includePassage || form.includeImages
+  const validQuestions = form.questions.every((question) => {
+    const filledOptions = question.options.filter((o) => o.text.trim()).length
+    const hasCorrect = question.options.some((o) => o.isCorrect && o.text.trim())
+    return question.text.trim() && filledOptions >= 2 && hasCorrect
+  })
+  const canSubmit = form.subjectId && validQuestions && (!hasSharedContext || form.passageText.trim() || form.imageUrlsText.trim())
+
+  const renderQuestionEditor = (question: QuestionDraft, index: number) => {
+    const filledOptions = question.options.filter((o) => o.text.trim()).length
+    const hasCorrect = question.options.some((o) => o.isCorrect && o.text.trim())
+
+    return (
+      <div key={index} className={hasSharedContext ? 'rounded-xl border border-gray-100 bg-white p-4 space-y-4' : 'space-y-5'}>
+        {hasSharedContext && (
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-gray-500">Question {index + 1}</p>
+            {form.questions.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeQuestion(index)}
+                className="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Remove
+              </button>
+            )}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Question text</label>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={3}
+            value={question.text}
+            onChange={(e) => setQuestion(index, { text: e.target.value })}
+            placeholder="Type the question here..."
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-medium text-gray-500">Answer options</label>
+            <span className="text-xs text-gray-400">Click the circle to mark the correct answer</span>
+          </div>
+          <div className="space-y-2">
+            {question.options.map((opt, optionIndex) => (
+              <div key={optionIndex} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOption(index, optionIndex, 'isCorrect', true)}
+                  className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${
+                    opt.isCorrect ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300 hover:border-emerald-400'
+                  }`}
+                >
+                  {opt.isCorrect && <div className="w-2 h-2 rounded-full bg-white" />}
+                </button>
+                <input
+                  className={`flex-1 rounded-lg border px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                    opt.isCorrect
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900 focus:ring-emerald-300'
+                      : 'border-gray-200 text-gray-900 focus:ring-blue-500'
+                  }`}
+                  value={opt.text}
+                  onChange={(e) => setOption(index, optionIndex, 'text', e.target.value)}
+                  placeholder={`Option ${String.fromCharCode(65 + optionIndex)}`}
+                />
+                {question.options.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => removeOption(index, optionIndex)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:bg-red-50 hover:text-red-400 transition-colors shrink-0"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          {question.options.length < 6 && (
+            <button
+              type="button"
+              onClick={() => addOption(index)}
+              className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add option
+            </button>
+          )}
+          {filledOptions > 0 && !hasCorrect && (
+            <p className="text-xs text-amber-600 mt-1">Mark one filled option as the correct answer.</p>
+          )}
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <label className="block text-xs font-medium text-gray-500">Explanation <span className="text-gray-300 font-normal">(optional)</span></label>
+            <button
+              type="button"
+              onClick={() => handleAutoExplain(index)}
+              disabled={explainLoading}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 transition-colors"
+              title="Generate explanation using AI"
+            >
+              {explainLoading ? (
+                <span className="w-3 h-3 border-1.5 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Sparkles className="w-3 h-3" />
+              )}
+              Auto-explain
+            </button>
+          </div>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={2}
+            value={question.explanation}
+            onChange={(e) => setQuestion(index, { explanation: e.target.value })}
+            placeholder="Explain why the correct answer is right..."
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">
       {error && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
       {explainError && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{explainError}</p>}
-
-      {/* Question text */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Question text</label>
-        <textarea
-          className={`${inputCls} resize-none`}
-          rows={3}
-          value={form.text}
-          onChange={(e) => setField('text', e.target.value)}
-          placeholder="Type the question here…"
-        />
-      </div>
 
       {/* Subject + Difficulty */}
       <div className="grid grid-cols-2 gap-3">
@@ -235,84 +429,90 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
         </div>
       </div>
 
-      {/* Options */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-medium text-gray-500">Answer options</label>
-          <span className="text-xs text-gray-400">Click the circle to mark the correct answer</span>
-        </div>
-        <div className="space-y-2">
-          {form.options.map((opt, i) => (
-            <div key={i} className="flex items-center gap-2">
-              {/* Correct radio */}
-              <button
-                onClick={() => setOption(i, 'isCorrect', true)}
-                className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${
-                  opt.isCorrect ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300 hover:border-emerald-400'
-                }`}
-              >
-                {opt.isCorrect && <div className="w-2 h-2 rounded-full bg-white" />}
-              </button>
-              <input
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition ${
-                  opt.isCorrect
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900 focus:ring-emerald-300'
-                    : 'border-gray-200 text-gray-900 focus:ring-blue-500'
-                }`}
-                value={opt.text}
-                onChange={(e) => setOption(i, 'text', e.target.value)}
-                placeholder={`Option ${String.fromCharCode(65 + i)}`}
-              />
-              {form.options.length > 2 && (
-                <button
-                  onClick={() => removeOption(i)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:bg-red-50 hover:text-red-400 transition-colors shrink-0"
-                >
-                  <Minus className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-        {form.options.length < 6 && (
+      {!isEdit && (
+        <div className="flex flex-wrap gap-2">
           <button
-            onClick={addOption}
-            className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+            type="button"
+            onClick={() => setField('includePassage', !form.includePassage)}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${
+              form.includePassage
+                ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+            }`}
           >
-            <Plus className="w-3.5 h-3.5" /> Add option
+            <ScrollText className="w-3.5 h-3.5" />
+            {form.includePassage ? 'Remove passage' : 'Add passage'}
           </button>
-        )}
-        {!hasCorrect && (
-          <p className="text-xs text-amber-600 mt-1">Mark one filled option as the correct answer.</p>
-        )}
-      </div>
+          <button
+            type="button"
+            onClick={() => setField('includeImages', !form.includeImages)}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${
+              form.includeImages
+                ? 'bg-sky-50 border-sky-200 text-sky-700'
+                : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            <ImageIcon className="w-3.5 h-3.5" />
+            {form.includeImages ? 'Remove images' : 'Add images'}
+          </button>
+        </div>
+      )}
 
-      {/* Explanation */}
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <label className="block text-xs font-medium text-gray-500">Explanation <span className="text-gray-300 font-normal">(optional)</span></label>
+      {hasSharedContext && (
+        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 space-y-3">
+          {form.includePassage && (
+            <>
+              <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                <ScrollText className="w-3.5 h-3.5" />
+                Shared passage
+              </div>
+              <input
+                className={inputCls}
+                value={form.passageTitle}
+                onChange={(e) => setField('passageTitle', e.target.value)}
+                placeholder="Passage title (optional)"
+              />
+              <textarea
+                className={`${inputCls} resize-none`}
+                rows={5}
+                value={form.passageText}
+                onChange={(e) => setField('passageText', e.target.value)}
+                placeholder="Paste the passage students should read before answering the questions..."
+              />
+            </>
+          )}
+          {form.includeImages && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                <ImageIcon className="w-3.5 h-3.5" />
+                Shared images
+              </div>
+              <textarea
+                className={`${inputCls} resize-none`}
+                rows={3}
+                value={form.imageUrlsText}
+                onChange={(e) => setField('imageUrlsText', e.target.value)}
+                placeholder="Add one image URL per line for diagrams, charts, maps, or source images..."
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {renderQuestionEditor(form.questions[0], 0)}
+
+      {hasSharedContext && (
+        <div className="space-y-3">
+          {form.questions.slice(1).map((question, offset) => renderQuestionEditor(question, offset + 1))}
           <button
-            onClick={handleAutoExplain}
-            disabled={explainLoading}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 transition-colors"
-            title="Generate explanation using AI"
+            type="button"
+            onClick={addQuestion}
+            className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-blue-200 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
           >
-            {explainLoading ? (
-              <span className="w-3 h-3 border-1.5 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Sparkles className="w-3 h-3" />
-            )}
-            Auto-explain
+            <Plus className="w-4 h-4" /> Add another question under this source
           </button>
         </div>
-        <textarea
-          className={`${inputCls} resize-none`}
-          rows={2}
-          value={form.explanation}
-          onChange={(e) => setField('explanation', e.target.value)}
-          placeholder="Explain why the correct answer is right…"
-        />
-      </div>
+      )}
 
       {/* Actions */}
       <div className="flex items-center gap-2 pt-1">
@@ -414,15 +614,22 @@ export default function AdminQuestionsPage() {
     })
 
   /* ── Form builder from Question ── */
-  function toForm(q: Question): typeof EMPTY_FORM {
+  function toForm(q: Question): QuestionFormData {
     return {
-      text: q.text,
-      explanation: q.explanation ?? '',
+      includePassage: !!q.passageText,
+      includeImages: Array.isArray(q.imageUrls) && q.imageUrls.length > 0,
+      passageTitle: q.passageTitle ?? '',
+      passageText: q.passageText ?? '',
+      imageUrlsText: Array.isArray(q.imageUrls) ? q.imageUrls.join('\n') : '',
       difficulty: (q.difficulty ?? 'medium').toLowerCase(),
       subjectId: q.subjectId ?? q.subject?.id ?? '',
-      options: q.options?.length
-        ? q.options.map((o) => ({ id: o.id, text: o.text, isCorrect: o.isCorrect }))
-        : EMPTY_FORM.options,
+      questions: [{
+        text: q.text,
+        explanation: q.explanation ?? '',
+        options: q.options?.length
+          ? q.options.map((o) => ({ id: o.id, text: o.text, isCorrect: o.isCorrect }))
+          : createQuestionDraft().options,
+      }],
     }
   }
 
@@ -432,7 +639,7 @@ export default function AdminQuestionsPage() {
     try {
       const payload = prepareQuestionPayload(form)
       const { data } = await api.post('/admin/questions', payload)
-      setQuestions((q) => [data, ...q])
+      setQuestions((q) => Array.isArray(data) ? [...data, ...q] : [data, ...q])
       setAddOpen(false)
     } catch (e: unknown) {
       setModalError((e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? (e as Error)?.message ?? 'Failed to create question')
@@ -465,7 +672,7 @@ export default function AdminQuestionsPage() {
     } finally { setModalLoading(false) }
   }
 
-  const SortIcon = ({ k }: { k: SortKey }) => {
+  const renderSortIcon = (k: SortKey) => {
     if (sort.key !== k) return <ChevronsUpDown className="w-3.5 h-3.5 text-gray-300 ml-1 inline" />
     return sort.dir === 'asc'
       ? <ChevronUp className="w-3.5 h-3.5 text-gray-700 ml-1 inline" />
@@ -544,13 +751,13 @@ export default function AdminQuestionsPage() {
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
                     <th className={thCls} onClick={() => toggleSort('text')}>
-                      Question <SortIcon k="text" />
+                      Question {renderSortIcon('text')}
                     </th>
                     <th className={thCls} onClick={() => toggleSort('subject')}>
-                      Subject <SortIcon k="subject" />
+                      Subject {renderSortIcon('subject')}
                     </th>
                     <th className={thCls} onClick={() => toggleSort('difficulty')}>
-                      Difficulty <SortIcon k="difficulty" />
+                      Difficulty {renderSortIcon('difficulty')}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
                   </tr>
@@ -572,6 +779,20 @@ export default function AdminQuestionsPage() {
                         <tr key={q.id} className="hover:bg-gray-50/60 transition-colors group">
                           <td className="px-4 py-3 max-w-xs">
                             <p className="text-gray-900 font-medium leading-snug">{truncate(q.text)}</p>
+                            {(q.passageText || (q.imageUrls?.length ?? 0) > 0) && (
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {q.passageText && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[11px] font-medium">
+                                    <ScrollText className="w-3 h-3" /> Passage
+                                  </span>
+                                )}
+                                {(q.imageUrls?.length ?? 0) > 0 && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-600 text-[11px] font-medium">
+                                    <ImageIcon className="w-3 h-3" /> {q.imageUrls?.length} image{q.imageUrls?.length !== 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                             {q.options && q.options.length > 0 && (
                               <p className="text-xs text-gray-400 mt-0.5">
                                 {q.options.length} option{q.options.length !== 1 ? 's' : ''}
