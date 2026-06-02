@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import api from '@/lib/api'
 import { useExamStore } from '@/store/examStore'
 import { formatTime } from '@/lib/utils'
 import {
   ChevronLeft, ChevronRight, Flag, Send,
-  Clock, CheckCircle2, Circle, BookmarkCheck,
+  Clock, CheckCircle2,
   AlertTriangle, Image as ImageIcon, ScrollText,
 } from 'lucide-react'
 
@@ -19,11 +19,21 @@ interface Option {
 
 interface Question {
   id: string
+  groupId?: string | null
   text: string
   passageTitle?: string | null
   passageText?: string | null
   imageUrls?: string[]
   options: Option[]
+}
+
+interface QuestionSet {
+  id: string
+  title: string
+  passageTitle?: string | null
+  passageText?: string | null
+  imageUrls: string[]
+  questions: Question[]
 }
 
 /* ─── Option label A B C D ───────────────────────────── */
@@ -145,31 +155,22 @@ export default function ExamSessionPage() {
     return () => clearInterval(t)
   }, [timeRemaining, isExamStarted, isExamSubmitted, setTimeRemaining])
 
-  /* Auto-submit on timeout */
-  useEffect(() => {
-    if (timeRemaining === 0 && isExamStarted && !isExamSubmitted) handleSubmit()
-  }, [timeRemaining])
-
-  const handleAnswerSelect = (optionId: string) => {
-    const q = questions[currentQuestionIndex]
-    if (!q) return
-    setAnswer(q.id, {
+  const handleAnswerSelect = (question: Question, optionId: string) => {
+    setAnswer(question.id, {
       selectedOption: optionId,
-      isMarkedForReview: answers[q.id]?.isMarkedForReview ?? false,
+      isMarkedForReview: answers[question.id]?.isMarkedForReview ?? false,
     })
-    api.post(`/exams/${sessionId}/save-answer`, { questionId: q.id, selectedOption: optionId }).catch(() => {})
+    api.post(`/exams/${sessionId}/save-answer`, { questionId: question.id, selectedOption: optionId }).catch(() => {})
   }
 
-  const handleMarkForReview = () => {
-    const q = questions[currentQuestionIndex]
-    if (!q) return
-    setAnswer(q.id, {
-      selectedOption: answers[q.id]?.selectedOption ?? null,
-      isMarkedForReview: !answers[q.id]?.isMarkedForReview,
+  const handleMarkForReview = (question: Question) => {
+    setAnswer(question.id, {
+      selectedOption: answers[question.id]?.selectedOption ?? null,
+      isMarkedForReview: !answers[question.id]?.isMarkedForReview,
     })
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     setIsSubmitting(true)
     setShowConfirm(false)
     try {
@@ -180,17 +181,51 @@ export default function ExamSessionPage() {
     } catch {
       setIsSubmitting(false)
     }
-  }
+  }, [resetExam, router, submitExamSession])
+
+  /* Auto-submit on timeout */
+  useEffect(() => {
+    if (timeRemaining !== 0 || !isExamStarted || isExamSubmitted) return
+    const timeout = window.setTimeout(() => { handleSubmit() }, 0)
+    return () => window.clearTimeout(timeout)
+  }, [timeRemaining, isExamStarted, isExamSubmitted, handleSubmit])
 
   /* ── Derived ── */
-  const currentQuestion = questions[currentQuestionIndex]
+  const questionSets = useMemo<QuestionSet[]>(() => {
+    const sets: QuestionSet[] = []
+    const setIndexById = new Map<string, number>()
+
+    questions.forEach((question) => {
+      const hasSharedSource = !!question.groupId && (!!question.passageText || (question.imageUrls?.length ?? 0) > 0)
+      const setId = hasSharedSource ? question.groupId! : question.id
+      const existingIndex = setIndexById.get(setId)
+
+      if (existingIndex !== undefined) {
+        sets[existingIndex].questions.push(question)
+        return
+      }
+
+      setIndexById.set(setId, sets.length)
+      sets.push({
+        id: setId,
+        title: hasSharedSource ? 'Question set' : 'Question',
+        passageTitle: question.passageTitle,
+        passageText: question.passageText,
+        imageUrls: question.imageUrls ?? [],
+        questions: [question],
+      })
+    })
+
+    return sets
+  }, [questions])
+
+  const currentSet = questionSets[currentQuestionIndex]
   const totalQuestions  = questions.length
+  const totalSets       = questionSets.length
   const answeredCount   = Object.values(answers).filter((a) => a.selectedOption).length
   const markedCount     = Object.values(answers).filter((a) => a.isMarkedForReview).length
   const progress        = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
   const isLowTime       = timeRemaining < 300
-  const currentAnswer   = currentQuestion ? answers[currentQuestion.id] : undefined
-  const isMarked        = currentAnswer?.isMarkedForReview ?? false
 
   /* ── Loading ── */
   if (isLoading) {
@@ -215,8 +250,8 @@ export default function ExamSessionPage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs font-medium text-blue-500">
-                Question <span className="text-blue-950 font-semibold">{currentQuestionIndex + 1}</span>
-                <span className="text-blue-300"> / {totalQuestions}</span>
+                Set <span className="text-blue-950 font-semibold">{currentQuestionIndex + 1}</span>
+                <span className="text-blue-300"> / {totalSets}</span>
               </span>
               <span className="text-xs text-sky-500">{answeredCount} answered</span>
             </div>
@@ -255,92 +290,120 @@ export default function ExamSessionPage() {
       {/* ── Content ──────────────────────────────────────── */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 grid lg:grid-cols-[1fr_260px] gap-6">
 
-        {/* Question + options */}
+        {/* Question set + options */}
         <div className="space-y-4">
+          {currentSet && (
+            <div key={currentSet.id} className="space-y-4 exam-rise-in">
+              {(currentSet.passageText || currentSet.imageUrls.length > 0) && (
+                <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm shadow-blue-100/50 p-6 sm:p-8">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
+                      <ScrollText className="w-3.5 h-3.5" />
+                      Source for {currentSet.questions.length} question{currentSet.questions.length !== 1 ? 's' : ''}
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      Set {currentQuestionIndex + 1} of {totalSets}
+                    </span>
+                  </div>
 
-          {/* Question card */}
-          <div key={currentQuestion?.id} className="bg-white rounded-2xl border border-blue-100 shadow-sm shadow-blue-100/50 p-6 sm:p-8 exam-rise-in">
-            {/* Q number + mark badge */}
-            <div className="flex items-center justify-between mb-4">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
-                Question {currentQuestionIndex + 1}
-              </span>
-              {isMarked && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
-                  <Flag className="w-3 h-3" /> Flagged for review
-                </span>
-              )}
-            </div>
+                  {currentSet.passageText && (
+                    <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
+                      <div className="flex items-center gap-2 mb-2 text-indigo-700">
+                        <ScrollText className="w-4 h-4" />
+                        <p className="text-sm font-semibold">{currentSet.passageTitle || 'Reading passage'}</p>
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">
+                        {currentSet.passageText}
+                      </p>
+                    </div>
+                  )}
 
-            <p className="text-base sm:text-lg text-blue-950 leading-relaxed font-medium">
-              {currentQuestion?.text}
-            </p>
-
-            {currentQuestion?.passageText && (
-              <div className="mt-5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
-                <div className="flex items-center gap-2 mb-2 text-indigo-700">
-                  <ScrollText className="w-4 h-4" />
-                  <p className="text-sm font-semibold">{currentQuestion.passageTitle || 'Reading passage'}</p>
+                  {currentSet.imageUrls.length > 0 && (
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      {currentSet.imageUrls.map((url, i) => (
+                        <figure key={`${url}-${i}`} className="rounded-xl border border-blue-100 bg-blue-50/40 overflow-hidden">
+                          <img
+                            src={url}
+                            alt={`Question set ${currentQuestionIndex + 1} image ${i + 1}`}
+                            className="w-full max-h-80 object-contain bg-white"
+                          />
+                          <figcaption className="flex items-center gap-1.5 px-3 py-2 text-xs text-blue-600">
+                            <ImageIcon className="w-3.5 h-3.5" />
+                            Image {i + 1}
+                          </figcaption>
+                        </figure>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">
-                  {currentQuestion.passageText}
-                </p>
-              </div>
-            )}
+              )}
 
-            {currentQuestion?.imageUrls && currentQuestion.imageUrls.length > 0 && (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {currentQuestion.imageUrls.map((url, i) => (
-                  <figure key={`${url}-${i}`} className="rounded-xl border border-blue-100 bg-blue-50/40 overflow-hidden">
-                    <img
-                      src={url}
-                      alt={`Question ${currentQuestionIndex + 1} image ${i + 1}`}
-                      className="w-full max-h-80 object-contain bg-white"
-                    />
-                    <figcaption className="flex items-center gap-1.5 px-3 py-2 text-xs text-blue-600">
-                      <ImageIcon className="w-3.5 h-3.5" />
-                      Image {i + 1}
-                    </figcaption>
-                  </figure>
-                ))}
-              </div>
-            )}
-          </div>
+              <div className="space-y-4">
+                {currentSet.questions.map((question) => {
+                  const questionNumber = questions.findIndex((q) => q.id === question.id) + 1
+                  const currentAnswer = answers[question.id]
+                  const isMarked = currentAnswer?.isMarkedForReview ?? false
 
-          {/* Options */}
-          <div className="space-y-3">
-            {currentQuestion?.options.map((option, i) => {
-              const selected = currentAnswer?.selectedOption === option.id
-              return (
-                <button
-                  key={option.id}
-                  onClick={() => handleAnswerSelect(option.id)}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md exam-pop-in"
-                  style={{
-                    ...(selected
-                      ? { background: '#EFF6FF', borderColor: '#3B82F6', boxShadow: '0 10px 22px rgba(37,99,235,0.14), 0 0 0 1px #3B82F6' }
-                      : { background: 'white', borderColor: '#DBEAFE' }),
-                    animationDelay: `${i * 45}ms`,
-                  }}
-                >
-                  {/* Label circle */}
-                  <span
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-all"
-                    style={selected
-                      ? { background: 'linear-gradient(135deg, #1D4ED8 0%, #38BDF8 100%)', color: 'white' }
-                      : { background: '#EFF6FF', color: '#1D4ED8' }
-                    }
-                  >
-                    {LABELS[i]}
-                  </span>
-                  <span className={`flex-1 text-sm sm:text-base ${selected ? 'text-blue-900 font-medium' : 'text-slate-700'}`}>
-                    {option.text}
-                  </span>
-                  {selected && <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />}
-                </button>
-              )
-            })}
-          </div>
+                  return (
+                    <div key={question.id} className="bg-white rounded-2xl border border-blue-100 shadow-sm shadow-blue-100/50 p-5 sm:p-6">
+                      <div className="flex items-center justify-between gap-3 mb-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                          Question {questionNumber}
+                        </span>
+                        <button
+                          onClick={() => handleMarkForReview(question)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all"
+                          style={isMarked
+                            ? { background: '#FEF9C3', borderColor: '#FDE68A', color: '#92400E' }
+                            : { background: 'white', borderColor: '#BFDBFE', color: '#1D4ED8' }}
+                        >
+                          <Flag className="w-3.5 h-3.5" />
+                          {isMarked ? 'Unflag' : 'Flag'}
+                        </button>
+                      </div>
+
+                      <p className="text-base sm:text-lg text-blue-950 leading-relaxed font-medium mb-4">
+                        {question.text}
+                      </p>
+
+                      <div className="space-y-3">
+                        {question.options.map((option, i) => {
+                          const selected = currentAnswer?.selectedOption === option.id
+                          return (
+                            <button
+                              key={option.id}
+                              onClick={() => handleAnswerSelect(question, option.id)}
+                              className="w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md exam-pop-in"
+                              style={{
+                                ...(selected
+                                  ? { background: '#EFF6FF', borderColor: '#3B82F6', boxShadow: '0 10px 22px rgba(37,99,235,0.14), 0 0 0 1px #3B82F6' }
+                                  : { background: 'white', borderColor: '#DBEAFE' }),
+                                animationDelay: `${i * 45}ms`,
+                              }}
+                            >
+                              <span
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-all"
+                                style={selected
+                                  ? { background: 'linear-gradient(135deg, #1D4ED8 0%, #38BDF8 100%)', color: 'white' }
+                                  : { background: '#EFF6FF', color: '#1D4ED8' }
+                                }
+                              >
+                                {LABELS[i]}
+                              </span>
+                              <span className={`flex-1 text-sm sm:text-base ${selected ? 'text-blue-900 font-medium' : 'text-slate-700'}`}>
+                                {option.text}
+                              </span>
+                              {selected && <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Navigation row */}
           <div className="flex items-center justify-between pt-2">
@@ -352,20 +415,15 @@ export default function ExamSessionPage() {
               <ChevronLeft className="w-4 h-4" /> Previous
             </button>
 
-            <button
-              onClick={handleMarkForReview}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border text-sm font-medium transition-all"
-              style={isMarked
-                ? { background: '#FEF9C3', borderColor: '#FDE68A', color: '#92400E' }
-                : { background: 'white', borderColor: '#BFDBFE', color: '#1D4ED8' }}
-            >
-              <Flag className="w-4 h-4" />
-              {isMarked ? 'Unflag' : 'Flag for review'}
-            </button>
+            <span className="hidden sm:inline-flex px-3 py-2 rounded-xl bg-white border border-blue-100 text-xs font-medium text-slate-500">
+              {currentSet?.questions.filter((question) => answers[question.id]?.selectedOption).length ?? 0}
+              {' / '}
+              {currentSet?.questions.length ?? 0} answered in this set
+            </span>
 
             <button
-              onClick={() => setCurrentQuestionIndex(Math.min(totalQuestions - 1, currentQuestionIndex + 1))}
-              disabled={currentQuestionIndex === totalQuestions - 1}
+              onClick={() => setCurrentQuestionIndex(Math.min(totalSets - 1, currentQuestionIndex + 1))}
+              disabled={currentQuestionIndex === totalSets - 1}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-blue-100 text-sm font-medium text-blue-700 bg-white hover:bg-blue-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 hover:-translate-y-0.5"
             >
               Next <ChevronRight className="w-4 h-4" />
@@ -376,7 +434,7 @@ export default function ExamSessionPage() {
         {/* ── Right panel: question palette ── */}
         <aside className="hidden lg:block">
           <div className="sticky top-20 bg-white rounded-2xl border border-blue-100 shadow-sm shadow-blue-100/50 p-5 exam-rise-in">
-            <p className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-3">Question map</p>
+            <p className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-3">Question sets</p>
 
             {/* Legend */}
             <div className="flex flex-col gap-1.5 mb-4">
@@ -395,26 +453,32 @@ export default function ExamSessionPage() {
 
             {/* Grid */}
             <div className="grid grid-cols-5 gap-1.5">
-              {questions.map((q, i) => {
-                const ans     = answers[q.id]
-                const answered = !!ans?.selectedOption
-                const flagged  = !!ans?.isMarkedForReview
+              {questionSets.map((set, i) => {
+                const answered = set.questions.every((question) => !!answers[question.id]?.selectedOption)
+                const partiallyAnswered = !answered && set.questions.some((question) => !!answers[question.id]?.selectedOption)
+                const flagged  = set.questions.some((question) => !!answers[question.id]?.isMarkedForReview)
                 const current  = i === currentQuestionIndex
 
                 let bg = '#F3F4F6', fg = '#6B7280'
                 if (current)  { bg = '#3B82F6'; fg = 'white' }
                 else if (flagged)  { bg = '#FEF3C7'; fg = '#92400E' }
                 else if (answered) { bg = '#DCFCE7'; fg = '#166534' }
+                else if (partiallyAnswered) { bg = '#DBEAFE'; fg = '#1D4ED8' }
 
                 return (
                   <button
-                    key={q.id}
+                    key={set.id}
                     onClick={() => setCurrentQuestionIndex(i)}
-                    className="w-full aspect-square rounded-lg text-xs font-semibold flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm"
+                    className="relative w-full aspect-square rounded-lg text-xs font-semibold flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm"
                     style={{ background: bg, color: fg }}
-                    title={`Question ${i + 1}`}
+                    title={set.questions.length > 1 ? `Set ${i + 1}: ${set.questions.length} questions` : `Question ${questions.findIndex((q) => q.id === set.questions[0].id) + 1}`}
                   >
                     {i + 1}
+                    {set.questions.length > 1 && (
+                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-white text-[10px] leading-4 text-blue-600 shadow-sm">
+                        {set.questions.length}
+                      </span>
+                    )}
                   </button>
                 )
               })}
@@ -437,25 +501,31 @@ export default function ExamSessionPage() {
       <div className="lg:hidden sticky bottom-0 bg-white/95 backdrop-blur border-t border-blue-100 px-4 py-3 flex items-center gap-3">
         <div className="flex-1 overflow-x-auto">
           <div className="flex gap-1.5 w-max">
-            {questions.map((q, i) => {
-              const ans     = answers[q.id]
-              const answered = !!ans?.selectedOption
-              const flagged  = !!ans?.isMarkedForReview
+            {questionSets.map((set, i) => {
+              const answered = set.questions.every((question) => !!answers[question.id]?.selectedOption)
+              const partiallyAnswered = !answered && set.questions.some((question) => !!answers[question.id]?.selectedOption)
+              const flagged  = set.questions.some((question) => !!answers[question.id]?.isMarkedForReview)
               const current  = i === currentQuestionIndex
 
               let bg = '#F3F4F6', fg = '#6B7280'
               if (current)  { bg = '#3B82F6'; fg = 'white' }
               else if (flagged)  { bg = '#FEF3C7'; fg = '#92400E' }
               else if (answered) { bg = '#DCFCE7'; fg = '#166534' }
+              else if (partiallyAnswered) { bg = '#DBEAFE'; fg = '#1D4ED8' }
 
               return (
                 <button
-                  key={q.id}
+                  key={set.id}
                   onClick={() => setCurrentQuestionIndex(i)}
-                  className="w-8 h-8 rounded-lg text-xs font-semibold shrink-0 transition-all duration-300"
+                  className="relative w-8 h-8 rounded-lg text-xs font-semibold shrink-0 transition-all duration-300"
                   style={{ background: bg, color: fg }}
                 >
                   {i + 1}
+                  {set.questions.length > 1 && (
+                    <span className="absolute -top-1 -right-1 min-w-3.5 h-3.5 px-0.5 rounded-full bg-white text-[9px] leading-3.5 text-blue-600 shadow-sm">
+                      {set.questions.length}
+                    </span>
+                  )}
                 </button>
               )
             })}
