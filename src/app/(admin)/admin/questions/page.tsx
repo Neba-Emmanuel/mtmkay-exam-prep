@@ -137,6 +137,28 @@ function prepareQuestionPayload(form: QuestionFormData) {
   }
 }
 
+function prepareQuestionUpdatePayload(form: QuestionFormData) {
+  if (!form.subjectId) throw new Error('Select a subject')
+
+  const imageUrls = form.includeImages
+    ? form.imageUrlsText.split('\n').map((url) => url.trim()).filter(Boolean)
+    : []
+  const question = normalizeQuestionDraft(form.questions[0])
+
+  if ((form.includePassage || form.includeImages) && !form.passageText.trim() && imageUrls.length === 0) {
+    throw new Error('Add passage text or at least one image URL')
+  }
+
+  return {
+    subjectId: form.subjectId,
+    difficulty: form.difficulty,
+    passageTitle: form.includePassage ? form.passageTitle.trim() : '',
+    passageText: form.includePassage ? form.passageText.trim() : '',
+    imageUrls,
+    ...question,
+  }
+}
+
 /* ─── Modal ──────────────────────────────────────────── */
 function Modal({ open, onClose, title, wide, children }: {
   open: boolean; onClose: () => void; title: string; wide?: boolean; children: React.ReactNode
@@ -650,7 +672,7 @@ export default function AdminQuestionsPage() {
     if (!editQuestion) return
     setModalLoading(true); setModalError('')
     try {
-      const payload = prepareQuestionPayload(form)
+      const payload = prepareQuestionUpdatePayload(form)
       const endpoint = `/admin/questions/${editQuestion.id}`
       const { data } = await api.put(endpoint, payload)
       setQuestions((q) => q.map((x) => x.id === editQuestion.id ? data : x))
