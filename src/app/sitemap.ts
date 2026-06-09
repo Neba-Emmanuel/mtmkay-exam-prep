@@ -1,7 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { absoluteUrl } from '@/lib/seo'
-
-const publicRoutes = ['/', '/about', '/contact', '/privacy']
+import { absoluteUrl, publicRoutes } from '@/lib/seo'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date()
@@ -9,7 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return publicRoutes.map((path) => ({
     url: absoluteUrl(path),
     lastModified,
-    changeFrequency: path === '/' ? 'weekly' : 'monthly',
+    changeFrequency: path === '/' ? 'daily' : 'weekly',
     priority: path === '/' ? 1 : 0.7,
   }))
 }

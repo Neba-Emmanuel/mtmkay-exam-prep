@@ -22,6 +22,8 @@ export const siteConfig = {
   ],
 }
 
+export const publicRoutes = ['/', '/about', '/contact', '/privacy-policy'] as const
+
 export function absoluteUrl(path = '/') {
   return new URL(path, siteConfig.url).toString()
 }

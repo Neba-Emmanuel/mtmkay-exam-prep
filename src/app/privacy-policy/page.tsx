@@ -5,7 +5,7 @@ import { createMetadata } from '@/lib/seo'
 
 export const metadata = createMetadata({
   title: 'Privacy Policy',
-  path: '/privacy',
+  path: '/privacy-policy',
   description:
     'Read the MTMKay Exam Prep privacy policy and learn how student account, exam activity, and platform usage data are protected.',
 })

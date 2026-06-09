@@ -15,7 +15,7 @@ const navItems: Array<{ href: string; label: string; key: MarketingNav }> = [
   { href: '/', label: 'Home', key: 'home' },
   { href: '/about', label: 'About', key: 'about' },
   { href: '/contact', label: 'Contact', key: 'contact' },
-  { href: '/privacy', label: 'Privacy', key: 'privacy' },
+  { href: '/privacy-policy', label: 'Privacy', key: 'privacy' },
 ]
 
 const HERO_PATTERN =
@@ -163,13 +163,11 @@ export function MarketingLayout({
                   <div>
                     <h4 className="text-white font-semibold mb-4">Legal</h4>
                     <ul className="space-y-2">
-                      {['Privacy Policy', 'Terms of Service'].map((link) => (
-                        <li key={link}>
-                          <Link href={`/${link.toLowerCase().replace(/ /g, '-')}`} className="text-gray-400 hover:text-white transition-colors">
-                            {link}
-                          </Link>
-                        </li>
-                      ))}
+                      <li>
+                        <Link href="/privacy-policy" className="text-gray-400 hover:text-white transition-colors">
+                          Privacy Policy
+                        </Link>
+                      </li>
                     </ul>
                   </div>
                 </div>

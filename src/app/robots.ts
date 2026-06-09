@@ -1,12 +1,12 @@
 import type { MetadataRoute } from 'next'
-import { absoluteUrl, siteConfig } from '@/lib/seo'
+import { absoluteUrl, publicRoutes, siteConfig } from '@/lib/seo'
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/about', '/contact', '/privacy'],
+        allow: [...publicRoutes],
         disallow: [
           '/admin',
           '/admin/',
