@@ -12,7 +12,7 @@ const STEPS = [
   'Almost ready…',
 ]
 
-function LoadingSteps({ mode }: { mode: 'EXAM' | 'PRACTICE' }) {
+function LoadingSteps({ mode }: { mode: 'EXAM' | 'PRACTICE' | 'YEAR' }) {
   const [step, setStep] = useState(0)
 
   useEffect(() => {
@@ -22,9 +22,11 @@ function LoadingSteps({ mode }: { mode: 'EXAM' | 'PRACTICE' }) {
     return () => clearInterval(t)
   }, [])
 
-  const Icon = mode === 'EXAM' ? ClipboardList : Zap
+  const Icon = mode === 'EXAM' || mode === 'YEAR' ? ClipboardList : Zap
   const accent = mode === 'EXAM'
     ? { bg: '#EFF6FF', text: '#1D4ED8', ring: '#BFDBFE', deep: '#1E3A8A' }
+    : mode === 'YEAR'
+      ? { bg: '#ECFEFF', text: '#0E7490', ring: '#A5F3FC', deep: '#155E75' }
     : { bg: '#F0F9FF', text: '#0284C7', ring: '#BAE6FD', deep: '#075985' }
 
   return (
@@ -52,7 +54,7 @@ function LoadingSteps({ mode }: { mode: 'EXAM' | 'PRACTICE' }) {
         {/* Heading */}
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: accent.text }}>
-            {mode === 'EXAM' ? 'Exam mode' : 'Practice mode'}
+            {mode === 'EXAM' ? 'Exam mode' : mode === 'YEAR' ? 'Past paper' : 'Practice mode'}
           </p>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: accent.deep }}>Starting your session</h1>
         </div>
@@ -86,6 +88,8 @@ function LoadingSteps({ mode }: { mode: 'EXAM' | 'PRACTICE' }) {
         <p className="text-xs text-gray-400">
           {mode === 'EXAM'
             ? 'Your time will start once the first question loads.'
+            : mode === 'YEAR'
+              ? 'This session will use questions from the selected year.'
             : 'Take your time — practice mode has no time limit.'}
         </p>
       </div>
@@ -101,7 +105,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
         <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
           <BookOpen className="w-7 h-7 text-red-400" />
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">Couldn't start the session</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Could not start the session</h2>
         <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2">{message}</p>
         <button
           onClick={onRetry}
@@ -120,17 +124,20 @@ function ExamStartContent() {
   const searchParams = useSearchParams()
   const subjectId = searchParams.get('subject')
   const modeParam = searchParams.get('mode')
+  const yearParam = searchParams.get('year')
   const startExamSession = useExamStore((s) => s.startExamSession)
   const error = useExamStore((s) => s.error)
 
-  const mode = modeParam === 'exam' ? 'EXAM' : 'PRACTICE'
+  const parsedYear = yearParam ? Number(yearParam) : null
+  const selectedYear = Number.isInteger(parsedYear) ? parsedYear : null
+  const mode = selectedYear ? 'YEAR' : modeParam === 'exam' ? 'EXAM' : 'PRACTICE'
 
   useEffect(() => {
     if (!subjectId) { router.replace('/exams'); return }
 
     const start = async () => {
       try {
-        await startExamSession(subjectId, mode)
+        await startExamSession(subjectId, mode, undefined, selectedYear)
         const sessionId = useExamStore.getState().sessionId
         if (sessionId) router.replace(`/exams/${sessionId}`)
         else router.replace('/exams')
@@ -140,7 +147,7 @@ function ExamStartContent() {
     }
 
     start()
-  }, [subjectId, modeParam, router, startExamSession])
+  }, [subjectId, mode, selectedYear, router, startExamSession])
 
   if (error) {
     return <ErrorState message={error} onRetry={() => router.replace('/exams')} />

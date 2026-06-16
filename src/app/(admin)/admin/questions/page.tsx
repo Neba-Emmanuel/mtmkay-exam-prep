@@ -7,7 +7,7 @@ import { generateExplanation } from '@/lib/gemini'
 import {
   FileQuestion, Plus, Search, Pencil, Trash2, X, Check,
   ChevronUp, ChevronDown, ChevronsUpDown, Minus, Sparkles,
-  Image as ImageIcon, ScrollText,
+  Image as ImageIcon, ScrollText, Calendar,
 } from 'lucide-react'
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -32,16 +32,18 @@ interface Question {
   groupId?: string | null
   explanation?: string
   difficulty?: string
+  year?: number | null
   subject?: Subject
   subjectId?: string
   options?: Option[]
   [key: string]: unknown
 }
 
-type SortKey = 'text' | 'subject' | 'difficulty'
+type SortKey = 'text' | 'subject' | 'year' | 'difficulty'
 type SortDir = 'asc' | 'desc'
 
 const DIFFICULTIES = ['easy', 'medium', 'hard']
+const MAX_QUESTION_YEAR = new Date().getFullYear() + 1
 
 const DIFF_STYLE: Record<string, { bg: string; text: string }> = {
   easy:   { bg: '#DCFCE7', text: '#166534' },
@@ -67,6 +69,7 @@ const EMPTY_FORM = {
   passageText: '',
   imageUrlsText: '',
   difficulty: 'medium',
+  year: '',
   subjectId: '',
   questions: [createQuestionDraft()],
 }
@@ -105,6 +108,12 @@ function normalizeQuestionDraft(question: QuestionDraft) {
 
 function prepareQuestionPayload(form: QuestionFormData) {
   if (!form.subjectId) throw new Error('Select a subject')
+  if (!form.year.trim()) throw new Error('Enter the examination year')
+
+  const year = Number(form.year)
+  if (!Number.isInteger(year) || year < 1900 || year > MAX_QUESTION_YEAR) {
+    throw new Error(`Year must be between 1900 and ${MAX_QUESTION_YEAR}`)
+  }
 
   const imageUrls = form.includeImages
     ? form.imageUrlsText.split('\n').map((url) => url.trim()).filter(Boolean)
@@ -120,6 +129,7 @@ function prepareQuestionPayload(form: QuestionFormData) {
     return {
       subjectId: form.subjectId,
       difficulty: form.difficulty,
+      year,
       passageTitle: form.includePassage ? form.passageTitle.trim() : '',
       passageText: form.includePassage ? form.passageText.trim() : '',
       imageUrls,
@@ -130,6 +140,7 @@ function prepareQuestionPayload(form: QuestionFormData) {
   return {
     subjectId: form.subjectId,
     difficulty: form.difficulty,
+    year,
     ...questions[0],
     passageTitle: form.passageTitle.trim(),
     passageText: form.passageText.trim(),
@@ -139,6 +150,12 @@ function prepareQuestionPayload(form: QuestionFormData) {
 
 function prepareQuestionUpdatePayload(form: QuestionFormData) {
   if (!form.subjectId) throw new Error('Select a subject')
+  if (!form.year.trim()) throw new Error('Enter the examination year')
+
+  const year = Number(form.year)
+  if (!Number.isInteger(year) || year < 1900 || year > MAX_QUESTION_YEAR) {
+    throw new Error(`Year must be between 1900 and ${MAX_QUESTION_YEAR}`)
+  }
 
   const imageUrls = form.includeImages
     ? form.imageUrlsText.split('\n').map((url) => url.trim()).filter(Boolean)
@@ -152,6 +169,7 @@ function prepareQuestionUpdatePayload(form: QuestionFormData) {
   return {
     subjectId: form.subjectId,
     difficulty: form.difficulty,
+    year,
     passageTitle: form.includePassage ? form.passageTitle.trim() : '',
     passageText: form.includePassage ? form.passageText.trim() : '',
     imageUrls,
@@ -296,7 +314,7 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
     const hasCorrect = question.options.some((o) => o.isCorrect && o.text.trim())
     return question.text.trim() && filledOptions >= 2 && hasCorrect
   })
-  const canSubmit = form.subjectId && validQuestions && (!hasSharedContext || form.passageText.trim() || form.imageUrlsText.trim())
+  const canSubmit = form.subjectId && form.year.trim() && validQuestions && (!hasSharedContext || form.passageText.trim() || form.imageUrlsText.trim())
 
   const renderQuestionEditor = (question: QuestionDraft, index: number) => {
     const filledOptions = question.options.filter((o) => o.text.trim()).length
@@ -418,14 +436,29 @@ function QuestionForm({ initial, subjects, onSubmit, onCancel, isEdit, loading, 
       {error && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
       {explainError && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{explainError}</p>}
 
-      {/* Subject + Difficulty */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Paper details */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Subject</label>
           <select className={inputCls} value={form.subjectId} onChange={(e) => setField('subjectId', e.target.value)}>
             <option value="">— Select subject —</option>
             {subjects.map((s) => <option key={s.id} value={s.id}>{s.name} {s.examType ? `(${s.examType.name})` : ''}</option>)}
           </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Exam year</label>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              className={`${inputCls} pl-9`}
+              inputMode="numeric"
+              min={1900}
+              max={MAX_QUESTION_YEAR}
+              value={form.year}
+              onChange={(e) => setField('year', e.target.value.replace(/\D/g, '').slice(0, 4))}
+              placeholder="2024"
+            />
+          </div>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Difficulty</label>
@@ -592,6 +625,7 @@ export default function AdminQuestionsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterSubject, setFilterSubject] = useState('')
+  const [filterYear, setFilterYear] = useState('')
   const [filterDiff, setFilterDiff] = useState('')
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'text', dir: 'asc' })
 
@@ -619,13 +653,19 @@ export default function AdminQuestionsPage() {
       const query = search.toLowerCase()
       const matchQ = q.text.toLowerCase().includes(query) || (q.subject?.name ?? '').toLowerCase().includes(query)
       const matchS = !filterSubject || q.subject?.id === filterSubject
+      const matchY = !filterYear || q.year?.toString() === filterYear
       const matchD = !filterDiff || (q.difficulty ?? '').toLowerCase() === filterDiff
-      return matchQ && matchS && matchD
+      return matchQ && matchS && matchY && matchD
     })
     .sort((a, b) => {
       let av = '', bv = ''
       if (sort.key === 'text') { av = a.text; bv = b.text }
       else if (sort.key === 'subject') { av = a.subject?.name ?? ''; bv = b.subject?.name ?? '' }
+      else if (sort.key === 'year') {
+        const ai = a.year ?? 0
+        const bi = b.year ?? 0
+        return sort.dir === 'asc' ? ai - bi : bi - ai
+      }
       else if (sort.key === 'difficulty') {
         const order = { easy: 0, medium: 1, hard: 2 }
         const ai = order[(a.difficulty ?? '').toLowerCase() as keyof typeof order] ?? 99
@@ -644,6 +684,7 @@ export default function AdminQuestionsPage() {
       passageText: q.passageText ?? '',
       imageUrlsText: Array.isArray(q.imageUrls) ? q.imageUrls.join('\n') : '',
       difficulty: (q.difficulty ?? 'medium').toLowerCase(),
+      year: q.year?.toString() ?? '',
       subjectId: q.subjectId ?? q.subject?.id ?? '',
       questions: [{
         text: q.text,
@@ -706,6 +747,9 @@ export default function AdminQuestionsPage() {
   const subjectOptions = Array.from(
     new Map(questions.map((q) => [q.subject?.id, q.subject] as const).filter(([id]) => id !== undefined)).values()
   ) as Subject[]
+  const yearOptions = Array.from(
+    new Set(questions.map((q) => q.year).filter((year): year is number => typeof year === 'number'))
+  ).sort((a, b) => b - a)
 
   return (
     <AdminShell title="Questions" description="">
@@ -748,6 +792,16 @@ export default function AdminQuestionsPage() {
               {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.name} {s.examType ? `(${s.examType.name})` : ''}</option>)}
             </select>
           )}
+          {yearOptions.length > 0 && (
+            <select
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
+              value={filterYear}
+              onChange={(e) => setFilterYear(e.target.value)}
+            >
+              <option value="">All years</option>
+              {yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
+            </select>
+          )}
           <select
             className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
             value={filterDiff}
@@ -778,6 +832,9 @@ export default function AdminQuestionsPage() {
                     <th className={thCls} onClick={() => toggleSort('subject')}>
                       Subject {renderSortIcon('subject')}
                     </th>
+                    <th className={thCls} onClick={() => toggleSort('year')}>
+                      Year {renderSortIcon('year')}
+                    </th>
                     <th className={thCls} onClick={() => toggleSort('difficulty')}>
                       Difficulty {renderSortIcon('difficulty')}
                     </th>
@@ -787,10 +844,10 @@ export default function AdminQuestionsPage() {
                 <tbody className="divide-y divide-gray-50">
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-16 text-center">
+                      <td colSpan={5} className="px-4 py-16 text-center">
                         <div className="flex flex-col items-center gap-2 text-gray-400">
                           <FileQuestion className="w-8 h-8 opacity-40" />
-                          <p className="text-sm">{search || filterSubject || filterDiff ? 'No questions match your filters' : 'No questions found'}</p>
+                          <p className="text-sm">{search || filterSubject || filterYear || filterDiff ? 'No questions match your filters' : 'No questions found'}</p>
                         </div>
                       </td>
                     </tr>
@@ -830,6 +887,11 @@ export default function AdminQuestionsPage() {
                           <td className="px-4 py-3 whitespace-nowrap">
                             {q.subject
                               ? <span className="text-sm text-gray-600">{q.subject.name}</span>
+                              : <span className="text-gray-300 text-xs italic">—</span>}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {q.year
+                              ? <span className="inline-flex items-center gap-1 text-sm text-gray-600"><Calendar className="w-3.5 h-3.5 text-gray-300" /> {q.year}</span>
                               : <span className="text-gray-300 text-xs italic">—</span>}
                           </td>
                           <td className="px-4 py-3">

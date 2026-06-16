@@ -30,7 +30,7 @@ interface ExamState {
   setCurrentQuestionIndex: (index: number) => void
   setAnswer: (questionId: string, answer: Partial<ExamAnswer>) => void
   setTimeRemaining: (time: number) => void
-  startExamSession: (subjectId: string, mode?: string, timeLimit?: number) => Promise<void>
+  startExamSession: (subjectId: string, mode?: string, timeLimit?: number, year?: number | null) => Promise<void>
   saveAnswer: (questionId: string, selectedOption: string | null) => Promise<void>
   submitExamSession: () => Promise<any>
   resetExam: () => void
@@ -63,13 +63,14 @@ export const useExamStore = create<ExamState>((set, get) => ({
       },
     })),
   setTimeRemaining: (timeRemaining) => set({ timeRemaining }),
-  startExamSession: async (subjectId, mode = 'PRACTICE', timeLimit = 3600) => {
+  startExamSession: async (subjectId, mode = 'PRACTICE', timeLimit = 3600, year = null) => {
     set({ isLoading: true, error: null })
     try {
       const response = await api.post('/exams/start', {
         subjectId,
         mode,
         timeLimit,
+        year,
       })
       const { sessionId, id, questions, timeRemaining } = response.data
       set({

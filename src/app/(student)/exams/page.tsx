@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { StudentShell } from '@/components/shared/StudentShell'
 import {
   BookOpen, GraduationCap, Building2, Briefcase, FileText,
-  ChevronRight, Hash, Layers, Zap, ClipboardList, Search,
+  ChevronRight, Hash, Layers, Zap, Search,
+  Calendar, ArrowLeft,
 } from 'lucide-react'
 import api from '@/lib/api'
 
@@ -23,6 +24,12 @@ interface Subject {
   name: string
   topicCount: number
   questionCount: number
+}
+
+interface PaperYear {
+  year: number
+  questionCount: number
+  label: string
 }
 
 /* ─── Icon map ───────────────────────────────────────── */
@@ -66,7 +73,10 @@ export default function ExamsPage() {
   const [categories, setCategories] = useState<ExamCategory[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [subjects, setSubjects] = useState<Subject[]>([])
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null)
+  const [paperYears, setPaperYears] = useState<PaperYear[]>([])
   const [subjectsLoading, setSubjectsLoading] = useState(false)
+  const [yearsLoading, setYearsLoading] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
 
@@ -79,19 +89,41 @@ export default function ExamsPage() {
 
   useEffect(() => {
     if (!selectedCategory) return
-    setSubjectsLoading(true)
-    setSearch('')
     api.get(`/exams/categories/${selectedCategory}/subjects`)
       .then((r) => setSubjects(r.data))
       .catch(console.error)
       .finally(() => setSubjectsLoading(false))
   }, [selectedCategory])
 
+  useEffect(() => {
+    if (!selectedSubject) return
+    api.get(`/exams/subjects/${selectedSubject}/years`)
+      .then((r) => setPaperYears(r.data))
+      .catch(console.error)
+      .finally(() => setYearsLoading(false))
+  }, [selectedSubject])
+
+  const selectCategory = (categoryId: string) => {
+    if (categoryId === selectedCategory) return
+    setSelectedCategory(categoryId)
+    setSubjectsLoading(true)
+    setSelectedSubject(null)
+    setPaperYears([])
+    setSearch('')
+  }
+
+  const selectSubject = (subjectId: string) => {
+    setSelectedSubject(subjectId)
+    setYearsLoading(true)
+    setPaperYears([])
+  }
+
   const filteredSubjects = subjects.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   )
 
   const selectedCat = categories.find((c) => c.id === selectedCategory)
+  const selectedSubjectData = subjects.find((subject) => subject.id === selectedSubject)
 
   return (
     <StudentShell title="Exams" description="Choose your exam type and subject">
@@ -125,7 +157,7 @@ export default function ExamsPage() {
                   return (
                     <button
                       key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
+                      onClick={() => selectCategory(cat.id)}
                       className="group relative flex flex-col items-start p-4 rounded-2xl border text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg exam-rise-in exam-soft-sheen"
                       style={active
                         ? { background: ac.active, borderColor: 'transparent', color: 'white', boxShadow: `0 12px 28px ${ac.ring}` }
@@ -183,6 +215,78 @@ export default function ExamsPage() {
                     <Search className="w-7 h-7 opacity-40" />
                     <p className="text-sm">{search ? 'No subjects match your search' : 'No subjects found'}</p>
                   </div>
+                ) : selectedSubject && selectedSubjectData ? (
+                  <div className="space-y-4">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSubject(null)}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      <ArrowLeft className="w-4 h-4" /> All subjects
+                    </button>
+
+                    <div className="rounded-2xl border border-blue-100 bg-white shadow-sm overflow-hidden">
+                      <div className="p-5 border-b border-blue-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                            style={{ background: accentFor(selectedCategory).bg }}
+                          >
+                            <BookOpen className="w-5 h-5" style={{ color: accentFor(selectedCategory).text }} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Past papers</p>
+                            <h3 className="text-lg font-bold text-blue-950">{selectedSubjectData.name}</h3>
+                            <p className="text-sm text-gray-400">{selectedSubjectData.questionCount} question{selectedSubjectData.questionCount !== 1 ? 's' : ''} in this subject</p>
+                          </div>
+                        </div>
+                        <Link href={`/exams/start?subject=${selectedSubjectData.id}`} className="self-start sm:self-auto">
+                          <button
+                            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5"
+                            style={{ background: accentFor(selectedCategory).bg, color: accentFor(selectedCategory).text }}
+                          >
+                            <Zap className="w-4 h-4" /> Mixed practice
+                          </button>
+                        </Link>
+                      </div>
+
+                      {yearsLoading ? (
+                        <div className="flex items-center justify-center h-40">
+                          <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
+                        </div>
+                      ) : paperYears.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-40 text-gray-400 gap-2">
+                          <Calendar className="w-7 h-7 opacity-40" />
+                          <p className="text-sm">No past years have been uploaded for this subject yet.</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-5">
+                          {paperYears.map((paper, index) => (
+                            <Link
+                              key={paper.year}
+                              href={`/exams/start?subject=${selectedSubjectData.id}&year=${paper.year}`}
+                              className="group rounded-xl border border-blue-50 bg-gradient-to-b from-white to-blue-50/40 p-4 hover:border-blue-200 hover:shadow-lg transition-all duration-300 exam-rise-in"
+                              style={{ animationDelay: `${index * 45}ms` }}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-400">Exam year</p>
+                                  <h4 className="text-2xl font-bold text-blue-950">{paper.year}</h4>
+                                </div>
+                                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform">
+                                  <ChevronRight className="w-4 h-4" />
+                                </div>
+                              </div>
+                              <p className="mt-3 inline-flex items-center gap-1 text-xs text-gray-400">
+                                <Hash className="w-3.5 h-3.5" />
+                                {paper.questionCount} question{paper.questionCount !== 1 ? 's' : ''}
+                              </p>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredSubjects.map((subject, index) => {
@@ -225,20 +329,20 @@ export default function ExamsPage() {
 
                             {/* CTAs */}
                             <div className="mt-auto grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => selectSubject(subject.id)}
+                                className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                                style={{ background: 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 46%, #0EA5E9 100%)' }}
+                              >
+                                <Calendar className="w-3.5 h-3.5" /> Years
+                              </button>
                               <Link href={`/exams/start?subject=${subject.id}`} className="block">
                                 <button
                                   className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5"
                                   style={{ background: ac.bg, color: ac.text }}
                                 >
                                   <Zap className="w-3.5 h-3.5" /> Practice
-                                </button>
-                              </Link>
-                              <Link href={`/exams/start?subject=${subject.id}&mode=exam`} className="block">
-                                <button
-                                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
-                                  style={{ background: 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 46%, #0EA5E9 100%)' }}
-                                >
-                                  <ClipboardList className="w-3.5 h-3.5" /> Exam
                                 </button>
                               </Link>
                             </div>
