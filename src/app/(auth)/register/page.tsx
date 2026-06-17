@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import api from '@/lib/api'
 import { getDashboardForRole, persistAuthSession } from '@/lib/authSession'
 import { useAuthStore } from '@/store/authStore'
-import { Eye, EyeOff, AlertCircle, Check, User, Mail, Phone, Lock } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, Check, User, Mail, Phone, Lock, Gift } from 'lucide-react'
 
 /* ─── Password visibility toggle ─────────────────────── */
 function PasswordInput({
@@ -81,14 +81,22 @@ function Field({ label, icon: Icon, children }: {
 }
 
 /* ─── Main Page ──────────────────────────────────────── */
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const authLogin = useAuthStore((state) => state.login)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '',
+    referralCode: '',
   })
+
+  // Pre-fill referral code from URL ?ref=XXXXX
+  useEffect(() => {
+    const ref = searchParams.get('ref')
+    if (ref) setFormData((p) => ({ ...p, referralCode: ref.toUpperCase() }))
+  }, [searchParams])
 
   const set = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }))
@@ -279,6 +287,24 @@ export default function RegisterPage() {
               )}
             </Field>
 
+            {/* Referral code (optional) */}
+            <Field label="Referral code (optional)" icon={Gift}>
+              <div className="relative">
+                <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <input
+                  id="referralCode" name="referralCode" type="text"
+                  placeholder="e.g. JANE1234"
+                  value={formData.referralCode}
+                  onChange={set}
+                  className={`${inputCls} uppercase placeholder-normal`}
+                  maxLength={10}
+                />
+              </div>
+              {formData.referralCode && (
+                <p className="text-xs text-blue-600 mt-1">Referral code applied 🎉</p>
+              )}
+            </Field>
+
             <button
               type="submit"
               disabled={isLoading}
@@ -299,5 +325,17 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-blue-600 animate-spin" />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   )
 }

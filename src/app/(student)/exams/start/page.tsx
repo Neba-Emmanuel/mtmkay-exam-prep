@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useExamStore } from '@/store/examStore'
 import { BookOpen, Zap, ClipboardList } from 'lucide-react'
+import { UpgradePrompt } from '@/components/subscription/UpgradePrompt'
 
 /* ─── Animated step list ─────────────────────────────── */
 const STEPS = [
@@ -127,6 +128,7 @@ function ExamStartContent() {
   const yearParam = searchParams.get('year')
   const startExamSession = useExamStore((s) => s.startExamSession)
   const error = useExamStore((s) => s.error)
+  const [upgradeRequired, setUpgradeRequired] = useState(false)
 
   const parsedYear = yearParam ? Number(yearParam) : null
   const selectedYear = Number.isInteger(parsedYear) ? parsedYear : null
@@ -141,13 +143,29 @@ function ExamStartContent() {
         const sessionId = useExamStore.getState().sessionId
         if (sessionId) router.replace(`/exams/${sessionId}`)
         else router.replace('/exams')
-      } catch {
-        // error state shown via store
+      } catch (err: any) {
+        // Check if the error is a free-tier limit (403 upgradeRequired)
+        if (err?.response?.status === 403 || err?.response?.data?.upgradeRequired) {
+          setUpgradeRequired(true)
+        }
+        // error state shown via store for other errors
       }
     }
 
     start()
   }, [subjectId, mode, selectedYear, router, startExamSession])
+
+  if (upgradeRequired) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <UpgradePrompt
+          title="Free limit reached"
+          message="You've used your free session for this subject. Upgrade your plan to continue practising — plans start at just 200 XAF."
+          onClose={() => router.replace('/exams')}
+        />
+      </div>
+    )
+  }
 
   if (error) {
     return <ErrorState message={error} onRetry={() => router.replace('/exams')} />

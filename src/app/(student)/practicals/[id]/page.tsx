@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { StudentShell } from '@/components/shared/StudentShell'
+import { UpgradePrompt } from '@/components/subscription/UpgradePrompt'
 import {
   ChevronLeft, ChevronRight, Eye, Calculator,
   AlertTriangle, FlaskConical, Shield, Wrench,
@@ -86,17 +87,28 @@ function InfoBox({ icon: Icon, title, content, style }: {
 /* ─── Main Page ──────────────────────────────────────── */
 export default function PracticalDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const id = params.id as string
   const [practical, setPractical] = useState<PracticalDetail | null>(null)
   const [activeStep, setActiveStep] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set())
+  const [upgradeRequired, setUpgradeRequired] = useState(false)
+  const [upgradeMessage, setUpgradeMessage] = useState('')
 
   useEffect(() => {
     if (!id) return
     api.get(`/practicals/${id}`)
       .then((r) => setPractical(r.data))
-      .catch(console.error)
+      .catch((err) => {
+        if (err?.response?.status === 403) {
+          setUpgradeMessage(
+            err?.response?.data?.message ||
+            'This practical requires a paid plan. Upgrade to access all practical content.'
+          )
+          setUpgradeRequired(true)
+        }
+      })
       .finally(() => setIsLoading(false))
   }, [id])
 
@@ -112,6 +124,18 @@ export default function PracticalDetailPage() {
             <p className="text-sm" style={{ color: B[400] }}>Loading practical…</p>
           </div>
         </div>
+      </StudentShell>
+    )
+  }
+
+  if (upgradeRequired) {
+    return (
+      <StudentShell title="Practical">
+        <UpgradePrompt
+          title="Premium practical"
+          message={upgradeMessage}
+          onClose={() => router.push('/practicals')}
+        />
       </StudentShell>
     )
   }

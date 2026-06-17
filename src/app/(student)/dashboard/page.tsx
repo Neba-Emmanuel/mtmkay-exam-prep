@@ -92,7 +92,7 @@ function SubscriptionBanner({ sub }: { sub?: DashboardData['subscription'] }) {
           : 'You\'re on the free plan. Upgrade for full access.'}
       </span>
       <Link
-        href="/payments"
+        href="/subscription"
         className="font-medium underline underline-offset-2 shrink-0"
       >
         {expired ? 'Renew' : 'Upgrade'}

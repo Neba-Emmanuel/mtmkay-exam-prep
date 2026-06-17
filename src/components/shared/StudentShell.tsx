@@ -10,15 +10,16 @@ import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
 import {
   Menu, X, BarChart3, FileText, TrendingUp,
-  Beaker, User, LogOut, ChevronRight,
+  Beaker, User, LogOut, ChevronRight, CreditCard,
 } from 'lucide-react'
 
 const studentNav = [
-  { href: '/dashboard',   label: 'Dashboard',  icon: BarChart3 },
-  { href: '/exams',       label: 'Exams',       icon: FileText },
-  { href: '/results',     label: 'Results',     icon: TrendingUp },
-  { href: '/practicals',  label: 'Practicals',  icon: Beaker },
-  { href: '/profile',     label: 'Profile',     icon: User },
+  { href: '/dashboard',    label: 'Dashboard',    icon: BarChart3 },
+  { href: '/exams',        label: 'Exams',        icon: FileText },
+  { href: '/results',      label: 'Results',      icon: TrendingUp },
+  { href: '/practicals',   label: 'Practicals',   icon: Beaker },
+  { href: '/subscription', label: 'Subscription', icon: CreditCard },
+  { href: '/profile',      label: 'Profile',      icon: User },
 ]
 
 interface StudentShellProps {

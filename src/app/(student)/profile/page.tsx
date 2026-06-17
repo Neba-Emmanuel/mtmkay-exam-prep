@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/utils'
+import { ReferralCard } from '@/components/subscription/ReferralCard'
 
 /* ─── Types ──────────────────────────────────────────── */
 interface UserProfile {
@@ -383,9 +384,11 @@ export default function ProfilePage() {
           )}
         </Section>
 
+        {/* ── Referral ── */}
+        <ReferralCard />
+
         {/* ── Account info ── */}
-        <Section icon={Shield} title="Account information" sub="Your account details and status">
-          <div className="divide-y divide-gray-50 space-y-0">
+        <Section icon={Shield} title="Account information" sub="Your account details and status">          <div className="divide-y divide-gray-50 space-y-0">
             {[
               {
                 icon: Calendar,

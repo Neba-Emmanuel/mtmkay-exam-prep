@@ -48,6 +48,11 @@ api.interceptors.response.use(
 
           originalRequest.headers.Authorization = `Bearer ${accessToken}`
           return api(originalRequest)
+        } else {
+          // No refresh token at all — clear session and redirect
+          clearAuthSession()
+          window.location.href = '/login'
+          return Promise.reject(error)
         }
       } catch (refreshError) {
         clearAuthSession()
