@@ -105,7 +105,7 @@ export default function SubscriptionPage() {
             {/* Free tier reminder */}
             <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200 text-center">
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Free tier:</span> 1 past paper per subject + 5 science practical videos —{' '}
+                <span className="font-medium">Free tier:</span> 1 past paper per subject + 5 science premuim practicals —{' '}
                 <span className="text-blue-600 font-medium">always free, no payment needed.</span>
               </p>
             </div>
