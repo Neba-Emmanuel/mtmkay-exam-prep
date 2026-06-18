@@ -269,7 +269,7 @@ export function PaymentModal({ plan, onClose, onSuccess }: Props) {
               </Button>
 
               <p className="text-xs text-center text-gray-400">
-                Secure payment via Fapshi · No card needed
+                Secure payment · No card needed
               </p>
             </form>
           )}
