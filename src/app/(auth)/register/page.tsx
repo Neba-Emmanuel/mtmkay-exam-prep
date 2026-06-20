@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -89,14 +89,8 @@ function RegisterForm() {
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '',
-    referralCode: '',
+    referralCode: searchParams.get('ref')?.toUpperCase() ?? '',
   })
-
-  // Pre-fill referral code from URL ?ref=XXXXX
-  useEffect(() => {
-    const ref = searchParams.get('ref')
-    if (ref) setFormData((p) => ({ ...p, referralCode: ref.toUpperCase() }))
-  }, [searchParams])
 
   const set = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }))
@@ -301,7 +295,7 @@ function RegisterForm() {
                 />
               </div>
               {formData.referralCode && (
-                <p className="text-xs text-blue-600 mt-1">Referral code applied 🎉</p>
+                <p className="text-xs text-blue-600 mt-1">Referral code applied</p>
               )}
             </Field>
 

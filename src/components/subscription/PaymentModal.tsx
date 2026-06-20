@@ -13,6 +13,7 @@ type Step = 'form' | 'processing' | 'success' | 'failed'
 
 interface Props {
   plan: Plan
+  examType: { id: string; name: string }
   onClose: () => void
   onSuccess: () => void
 }
@@ -20,7 +21,7 @@ interface Props {
 const POLL_INTERVAL_MS = 4000
 const MAX_POLLS = 30 // 2 min total
 
-export function PaymentModal({ plan, onClose, onSuccess }: Props) {
+export function PaymentModal({ plan, examType, onClose, onSuccess }: Props) {
   const [step, setStep] = useState<Step>('form')
   const [phone, setPhone] = useState('')
   const [medium, setMedium] = useState<Medium>('mobile money')
@@ -104,6 +105,7 @@ export function PaymentModal({ plan, onClose, onSuccess }: Props) {
     try {
       const res = await api.post('/subscriptions/pay', {
         planId: plan.id,
+        examTypeId: examType.id,
         phone: phone.replace(/\s+/g, ''),
         medium,
       })
@@ -149,7 +151,7 @@ export function PaymentModal({ plan, onClose, onSuccess }: Props) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
             <h2 id="payment-modal-title" className="font-bold text-gray-900 text-base">
-              {step === 'success' ? 'Payment Successful!' : step === 'failed' ? 'Payment Failed' : `Pay for ${plan.name}`}
+              {step === 'success' ? 'Payment Successful!' : step === 'failed' ? 'Payment Failed' : `Pay for ${examType.name}`}
             </h2>
             {step === 'form' && (
               <p className="text-xs text-gray-500 mt-0.5">
@@ -244,6 +246,10 @@ export function PaymentModal({ plan, onClose, onSuccess }: Props) {
                 <div className="flex justify-between text-gray-600">
                   <span>Plan</span>
                   <span className="font-medium text-gray-900">{plan.name}</span>
+                </div>
+                <div className="flex justify-between text-gray-600 mt-1">
+                  <span>Exam type</span>
+                  <span className="font-medium text-gray-900">{examType.name}</span>
                 </div>
                 <div className="flex justify-between text-gray-600 mt-1">
                   <span>Access</span>

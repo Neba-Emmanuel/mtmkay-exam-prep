@@ -8,6 +8,7 @@ interface Props {
   title?: string
   message: string
   onClose?: () => void
+  href?: string
   /** If true, renders as a full-page overlay. Otherwise renders inline. */
   overlay?: boolean
 }
@@ -16,6 +17,7 @@ export function UpgradePrompt({
   title = 'Upgrade to continue',
   message,
   onClose,
+  href = '/subscription',
   overlay = false,
 }: Props) {
   const router = useRouter()
@@ -56,7 +58,7 @@ export function UpgradePrompt({
       <div className="flex flex-col gap-2 w-full">
         <Button
           className="w-full font-semibold gap-2"
-          onClick={() => router.push('/subscription')}
+          onClick={() => router.push(href)}
         >
           <Zap className="w-4 h-4" /> View Plans & Pay
         </Button>

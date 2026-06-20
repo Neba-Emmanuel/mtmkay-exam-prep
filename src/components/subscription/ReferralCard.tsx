@@ -6,9 +6,16 @@ import api from '@/lib/api'
 
 interface ReferralInfo {
   referralCode: string | null
+  referralLink: string | null
   referralCount: number
-  bonusWeeksEarned: number
-  toNextBonus: number
+  bonusDaysEarned: number
+  rewardDaysPerReferral: number
+  recentReferrals: Array<{
+    id: string
+    name: string
+    joinedAt: string
+    rewardGranted: boolean
+  }>
   shareMessage: string
 }
 
@@ -52,8 +59,6 @@ export function ReferralCard() {
 
   if (!info) return null
 
-  const progressToNext = ((3 - info.toNextBonus) / 3) * 100
-
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {/* Green gradient strip */}
@@ -67,22 +72,22 @@ export function ReferralCard() {
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-900">Refer Friends</p>
-            <p className="text-xs text-gray-500">Bring 3 friends → get 1 week free</p>
+            <p className="text-xs text-gray-500">Earn 1 full day when a friend buys Weekly or higher</p>
           </div>
         </div>
 
-        {/* Referral code */}
+        {/* Referral link */}
         {info.referralCode && (
           <div className="mb-4">
-            <p className="text-xs text-gray-500 mb-1.5">Your referral code</p>
+            <p className="text-xs text-gray-500 mb-1.5">Your referral link</p>
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                <span className="font-mono font-bold text-blue-700 text-sm tracking-widest">
-                  {info.referralCode}
+                <span className="block truncate font-medium text-blue-700 text-sm">
+                  {info.referralLink}
                 </span>
               </div>
               <button
-                onClick={() => handleCopy(info.referralCode!)}
+                onClick={() => handleCopy(info.referralLink || info.referralCode!)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 {copied
@@ -90,32 +95,45 @@ export function ReferralCard() {
                   : <><Copy className="w-3.5 h-3.5" /> Copy</>}
               </button>
             </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Code: <span className="font-mono font-semibold">{info.referralCode}</span>
+            </p>
           </div>
         )}
 
-        {/* Progress to next bonus */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between text-xs mb-1.5">
+        {/* Reward stats */}
+        <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+          <div className="flex items-center justify-between text-xs">
             <span className="text-gray-500 flex items-center gap-1">
               <Users className="w-3.5 h-3.5" />
               {info.referralCount} friend{info.referralCount !== 1 ? 's' : ''} referred
             </span>
             <span className="text-emerald-700 font-medium">
-              {info.toNextBonus} more for free week
+              {info.bonusDaysEarned} free day{info.bonusDaysEarned !== 1 ? 's' : ''} earned
             </span>
           </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-500"
-              style={{ width: `${progressToNext}%` }}
-            />
-          </div>
-          {info.bonusWeeksEarned > 0 && (
-            <p className="text-xs text-emerald-600 mt-1 font-medium">
-              🎉 {info.bonusWeeksEarned} bonus week{info.bonusWeeksEarned > 1 ? 's' : ''} earned!
-            </p>
-          )}
+          <p className="text-xs text-emerald-700 mt-1">
+            A referral counts after your friend signs up with your link and buys at least a Weekly plan.
+          </p>
         </div>
+
+        {info.recentReferrals.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs text-gray-500 mb-2">Recent referrals</p>
+            <div className="space-y-1.5">
+              {info.recentReferrals.map((referral) => (
+                <div key={referral.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2">
+                  <span className="text-xs font-medium text-gray-700">{referral.name}</span>
+                  <span className={referral.rewardGranted ? 'text-[11px] text-emerald-600 font-medium' : 'text-[11px] text-gray-400'}>
+                    {referral.rewardGranted
+                      ? 'Rewarded'
+                      : new Date(referral.joinedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* WhatsApp share */}
         <button

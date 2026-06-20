@@ -129,6 +129,7 @@ function ExamStartContent() {
   const startExamSession = useExamStore((s) => s.startExamSession)
   const error = useExamStore((s) => s.error)
   const [upgradeRequired, setUpgradeRequired] = useState(false)
+  const [lockedExamTypeId, setLockedExamTypeId] = useState<string | null>(null)
 
   const parsedYear = yearParam ? Number(yearParam) : null
   const selectedYear = Number.isInteger(parsedYear) ? parsedYear : null
@@ -147,6 +148,7 @@ function ExamStartContent() {
         // Check if the error is a free-tier limit (403 upgradeRequired)
         if (err?.response?.status === 403 || err?.response?.data?.upgradeRequired) {
           setUpgradeRequired(true)
+          setLockedExamTypeId(err?.response?.data?.examTypeId ?? null)
         }
         // error state shown via store for other errors
       }
@@ -159,8 +161,9 @@ function ExamStartContent() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <UpgradePrompt
-          title="Free limit reached"
-          message="You've used your free session for this subject. Upgrade your plan to continue practising — plans start at just 200 XAF."
+          title="Exam access required"
+          message={error || 'You need active access for this exam type before you can take its questions.'}
+          href={lockedExamTypeId ? `/subscription?examTypeId=${lockedExamTypeId}` : '/subscription'}
           onClose={() => router.replace('/exams')}
         />
       </div>
