@@ -9,7 +9,7 @@ import { clearAuthSession } from '@/lib/authSession'
 import api from '@/lib/api'
 import {
   Menu, X, LayoutDashboard, Users, FileQuestion,
-  BookOpen, Beaker, CreditCard, BarChart3, LogOut, ChevronRight, Hash,
+  BookOpen, Beaker, CreditCard, BarChart3, LogOut, ChevronRight, Hash, Gift,
 } from 'lucide-react'
 
 interface AdminShellProps {
@@ -21,6 +21,7 @@ interface AdminShellProps {
 const adminNav = [
   { href: '/admin',             label: 'Overview',   icon: LayoutDashboard },
   { href: '/admin/users',       label: 'Users',      icon: Users },
+  { href: '/admin/referrals',   label: 'Referrals',  icon: Gift },
   { href: '/admin/questions',   label: 'Questions',  icon: FileQuestion },
   { href: '/admin/subjects',    label: 'Subjects',   icon: BookOpen },
   { href: '/admin/exam-types',  label: 'Exam Types', icon: Hash },

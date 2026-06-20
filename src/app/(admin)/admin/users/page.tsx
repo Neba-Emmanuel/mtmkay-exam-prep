@@ -7,6 +7,7 @@ import { formatDate } from '@/lib/utils'
 import {
   Users, Plus, Search, Pencil, Trash2, X, Check,
   ChevronUp, ChevronDown, ChevronsUpDown, ShieldCheck, UserCircle2,
+  Gift,
 } from 'lucide-react'
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -18,10 +19,21 @@ interface User {
   role: 'admin' | 'student' | string
   isActive: boolean
   createdAt: string
+  referralCode?: string | null
+  referralCount?: number
+  referralAccessDaysEarned?: number
+  accessSource?: 'REFERRAL' | null
+  referredBy?: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    referralCode?: string | null
+  } | null
   [key: string]: unknown
 }
 
-type SortKey = 'name' | 'email' | 'role' | 'isActive' | 'createdAt'
+type SortKey = 'name' | 'email' | 'role' | 'isActive' | 'createdAt' | 'referralAccessDaysEarned'
 type SortDir = 'asc' | 'desc'
 
 const EMPTY_FORM = { firstName: '', lastName: '', email: '', role: 'student', isActive: true, password: '' }
@@ -42,6 +54,10 @@ function statusPill(active: boolean) {
     : { bg: '#F1F5F9', text: '#64748B', label: 'Inactive' }
 }
 
+function fullName(user: Pick<User, 'firstName' | 'lastName' | 'email'>) {
+  return `${user.firstName} ${user.lastName}`.trim() || user.email
+}
+
 const avatarColors = [
   ['#EDE9FE', '#7C3AED'], ['#E0F2FE', '#0369A1'],
   ['#FCE7F3', '#9D174D'], ['#FEF9C3', '#92400E'],
@@ -50,6 +66,13 @@ const avatarColors = [
 function avatarColor(name: string) {
   const i = (name.charCodeAt(0) || 0) % avatarColors.length
   return avatarColors[i]
+}
+
+function renderSortIcon(sort: { key: SortKey; dir: SortDir }, key: SortKey) {
+  if (sort.key !== key) return <ChevronsUpDown className="w-3.5 h-3.5 text-gray-300 ml-1" />
+  return sort.dir === 'asc'
+    ? <ChevronUp className="w-3.5 h-3.5 text-gray-700 ml-1" />
+    : <ChevronDown className="w-3.5 h-3.5 text-gray-700 ml-1" />
 }
 
 /* ─── Sub-components ─────────────────────────────────── */
@@ -273,6 +296,10 @@ export default function AdminUsersPage() {
       let av: string, bv: string
       if (sort.key === 'name') { av = `${a.firstName} ${a.lastName}`; bv = `${b.firstName} ${b.lastName}` }
       else if (sort.key === 'isActive') { av = String(a.isActive); bv = String(b.isActive) }
+      else if (sort.key === 'referralAccessDaysEarned') {
+        av = String(a.referralAccessDaysEarned ?? 0).padStart(4, '0')
+        bv = String(b.referralAccessDaysEarned ?? 0).padStart(4, '0')
+      }
       else { av = String(a[sort.key] ?? ''); bv = String(b[sort.key] ?? '') }
       return sort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
     })
@@ -315,13 +342,6 @@ export default function AdminUsersPage() {
 
   const openEdit = (user: User) => { setModalError(''); setEditUser(user) }
   const openDelete = (user: User) => { setModalError(''); setDeleteUser(user) }
-
-  const SortIcon = ({ k }: { k: SortKey }) => {
-    if (sort.key !== k) return <ChevronsUpDown className="w-3.5 h-3.5 text-gray-300 ml-1" />
-    return sort.dir === 'asc'
-      ? <ChevronUp className="w-3.5 h-3.5 text-gray-700 ml-1" />
-      : <ChevronDown className="w-3.5 h-3.5 text-gray-700 ml-1" />
-  }
 
   const thCls = 'px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide select-none cursor-pointer hover:text-gray-900 transition-colors'
 
@@ -371,19 +391,22 @@ export default function AdminUsersPage() {
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
                     <th className={thCls} onClick={() => toggleSort('name')}>
-                      <span className="inline-flex items-center">Name <SortIcon k="name" /></span>
+                      <span className="inline-flex items-center">Name {renderSortIcon(sort, 'name')}</span>
                     </th>
                     <th className={thCls} onClick={() => toggleSort('email')}>
-                      <span className="inline-flex items-center">Email <SortIcon k="email" /></span>
+                      <span className="inline-flex items-center">Email {renderSortIcon(sort, 'email')}</span>
                     </th>
                     <th className={thCls} onClick={() => toggleSort('role')}>
-                      <span className="inline-flex items-center">Role <SortIcon k="role" /></span>
+                      <span className="inline-flex items-center">Role {renderSortIcon(sort, 'role')}</span>
                     </th>
                     <th className={thCls} onClick={() => toggleSort('isActive')}>
-                      <span className="inline-flex items-center">Status <SortIcon k="isActive" /></span>
+                      <span className="inline-flex items-center">Status {renderSortIcon(sort, 'isActive')}</span>
+                    </th>
+                    <th className={thCls} onClick={() => toggleSort('referralAccessDaysEarned')}>
+                      <span className="inline-flex items-center">Referral Access {renderSortIcon(sort, 'referralAccessDaysEarned')}</span>
                     </th>
                     <th className={thCls} onClick={() => toggleSort('createdAt')}>
-                      <span className="inline-flex items-center">Joined <SortIcon k="createdAt" /></span>
+                      <span className="inline-flex items-center">Joined {renderSortIcon(sort, 'createdAt')}</span>
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
                   </tr>
@@ -391,7 +414,7 @@ export default function AdminUsersPage() {
                 <tbody className="divide-y divide-gray-50">
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-16 text-center">
+                      <td colSpan={7} className="px-4 py-16 text-center">
                         <div className="flex flex-col items-center gap-2 text-gray-400">
                           <UserCircle2 className="w-8 h-8 opacity-40" />
                           <p className="text-sm">{search ? 'No users match your search' : 'No users found'}</p>
@@ -402,6 +425,7 @@ export default function AdminUsersPage() {
                     filtered.map((user) => {
                       const rc = roleColor(user.role)
                       const sc = statusPill(user.isActive)
+                      const referralDays = user.referralAccessDaysEarned ?? 0
                       return (
                         <tr key={user.id} className="hover:bg-gray-50/60 transition-colors group">
                           <td className="px-4 py-3">
@@ -419,6 +443,28 @@ export default function AdminUsersPage() {
                           </td>
                           <td className="px-4 py-3">
                             <Pill bg={sc.bg} text={sc.text} label={sc.label} />
+                          </td>
+                          <td className="px-4 py-3">
+                            {user.accessSource === 'REFERRAL' ? (
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-medium text-pink-700">
+                                  <Gift className="h-3.5 w-3.5" />
+                                  Access from referrals
+                                </span>
+                                <p className="text-xs text-gray-400">
+                                  {referralDays} free day{referralDays !== 1 ? 's' : ''} earned
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="space-y-1">
+                                <span className="text-xs text-gray-400">
+                                  {referralDays > 0 ? `${referralDays} referral day${referralDays !== 1 ? 's' : ''}` : 'No referral access'}
+                                </span>
+                                {user.referredBy && (
+                                  <p className="text-xs text-gray-400">Referred by {fullName(user.referredBy)}</p>
+                                )}
+                              </div>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-gray-400 text-xs tabular-nums">{formatDate(String(user.createdAt))}</td>
                           <td className="px-4 py-3">

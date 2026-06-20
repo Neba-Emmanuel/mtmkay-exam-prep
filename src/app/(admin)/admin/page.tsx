@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AdminShell } from '@/components/shared/AdminShell'
-import { Users, FileQuestion, Beaker, CreditCard, BarChart3, ShieldCheck, ArrowUpRight, Plus } from 'lucide-react'
+import { Users, FileQuestion, Beaker, CreditCard, BarChart3, ShieldCheck, ArrowUpRight, Plus, Gift } from 'lucide-react'
 import api from '@/lib/api'
 
 interface Stats {
@@ -94,6 +94,15 @@ const quickLinks = [
     accent: '#C2255C',
     bg: '#FFF0F6',
     dot: '#F783AC',
+  },
+  {
+    href: '/admin/referrals',
+    title: 'Referrals',
+    desc: 'Track invites and free access rewards',
+    icon: Gift,
+    accent: '#BE185D',
+    bg: '#FDF2F8',
+    dot: '#F472B6',
   },
   {
     href: '/admin/analytics',
