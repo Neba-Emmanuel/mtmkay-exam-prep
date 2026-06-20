@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { clearAuthSession } from '@/lib/authSession'
+import api from '@/lib/api'
 import {
   Menu, X, LayoutDashboard, Users, FileQuestion,
   BookOpen, Beaker, CreditCard, BarChart3, LogOut, ChevronRight, Hash,
@@ -72,7 +73,8 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await api.post('/auth/logout') } catch {}
     clearAuthSession()
     window.location.href = '/login'
   }

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { clearAuthSession } from '@/lib/authSession'
 
 interface User {
   id: string
@@ -50,8 +51,10 @@ export const useAuthStore = create<AuthState>()(
       setRefreshToken: (refreshToken) => set({ refreshToken }),
       login: (user, accessToken, refreshToken) =>
         set({ user: normalizeUser(user), accessToken, refreshToken, isAuthenticated: true }),
-      logout: () =>
-        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false }),
+      logout: () => {
+        clearAuthSession()
+        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false })
+      },
       setLoading: (isLoading) => set({ isLoading }),
       hydrate: () => {
         // Sync localStorage on mount
