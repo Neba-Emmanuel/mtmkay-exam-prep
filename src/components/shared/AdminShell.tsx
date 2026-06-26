@@ -7,9 +7,10 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { clearAuthSession } from '@/lib/authSession'
 import api from '@/lib/api'
+import { NotificationBell } from '@/components/shared/NotificationBell'
 import {
   Menu, X, LayoutDashboard, Users, FileQuestion,
-  BookOpen, Beaker, CreditCard, BarChart3, LogOut, ChevronRight, Hash, Gift,
+  BookOpen, Beaker, CreditCard, BarChart3, LogOut, ChevronRight, Hash, Gift, Bell, Mail,
 } from 'lucide-react'
 
 interface AdminShellProps {
@@ -22,6 +23,8 @@ const adminNav = [
   { href: '/admin',             label: 'Overview',   icon: LayoutDashboard },
   { href: '/admin/users',       label: 'Users',      icon: Users },
   { href: '/admin/referrals',   label: 'Referrals',  icon: Gift },
+  { href: '/admin/notifications', label: 'Notifications', icon: Bell },
+  { href: '/admin/emails',      label: 'Emails',     icon: Mail },
   { href: '/admin/questions',   label: 'Questions',  icon: FileQuestion },
   { href: '/admin/subjects',    label: 'Subjects',   icon: BookOpen },
   { href: '/admin/exam-types',  label: 'Exam Types', icon: Hash },
@@ -176,6 +179,8 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
               </div>
               <h1 className="text-base font-bold text-blue-700 leading-tight truncate">{title}</h1>
             </div>
+
+            <NotificationBell />
 
             {/* Logout — desktop */}
             <button

@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
+import { NotificationBell } from '@/components/shared/NotificationBell'
 import {
   Menu, X, BarChart3, FileText, TrendingUp,
   Beaker, User, LogOut, ChevronRight, CreditCard,
@@ -230,6 +231,8 @@ export function StudentShell({
             {headerAction && (
               <div className="shrink-0 flex items-center gap-2">{headerAction}</div>
             )}
+
+            <NotificationBell />
 
             {/* User chip — desktop only (sidebar shows full card) */}
             {user && (

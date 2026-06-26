@@ -1,15 +1,41 @@
 'use client'
 
 import { useState } from 'react'
-import { Send, CheckCircle2 } from 'lucide-react'
+import { AlertCircle, Send, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import api from '@/lib/api'
 
 export function ContactForm() {
   const [submitted, setSubmitted] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setSubmitted(true)
+    setError('')
+    setIsSending(true)
+
+    const formElement = e.currentTarget
+    const form = new FormData(formElement)
+
+    try {
+      await api.post('/emails/contact', {
+        firstName: form.get('firstName'),
+        lastName: form.get('lastName'),
+        email: form.get('email'),
+        subject: form.get('subject'),
+        message: form.get('message'),
+      })
+      setSubmitted(true)
+      formElement.reset()
+    } catch (sendError) {
+      setError(
+        (sendError as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'We could not send your message. Please try again.'
+      )
+    } finally {
+      setIsSending(false)
+    }
   }
 
   if (submitted) {
@@ -34,6 +60,12 @@ export function ContactForm() {
     >
       <h3 className="text-xl font-bold text-gray-900 mb-6">Send us a message</h3>
       <div className="space-y-5">
+        {error && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
         <div className="grid sm:grid-cols-2 gap-5">
           <div>
             <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -100,10 +132,15 @@ export function ContactForm() {
         </div>
         <Button
           type="submit"
+          disabled={isSending}
           className="w-full py-6 text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl"
         >
-          <Send className="w-4 h-4 mr-2" />
-          Send Message
+          {isSending ? (
+            <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          ) : (
+            <Send className="w-4 h-4 mr-2" />
+          )}
+          {isSending ? 'Sending...' : 'Send Message'}
         </Button>
       </div>
     </form>
